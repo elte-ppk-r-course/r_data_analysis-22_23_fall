@@ -12,7 +12,7 @@
 <meta name="author" content="Tamas Nagy" />
 
 
-<title>Assignment 7: Lightning simulation</title>
+<title>Assignment 2: Data visualization</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -349,38 +349,68 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Assignment 7: Lightning simulation</h1>
+<h1 class="title toc-ignore">Assignment 2: Data visualization</h1>
 <h4 class="author">Tamas Nagy</h4>
 
 </div>
 
 
-<div id="task" class="section level1">
-<h1>Task</h1>
+<p>You will have to create 3 plots based on the datasets and
+instructions detailed below. You will find the plots themeselves in the
+<code>assignments/assignment_2_plots</code>. Your task is to write the
+code that will reproduce the plots as closely as possible.</p>
+<div id="skills-needed-to-solve-this-assignment" class="section level1">
+<h1>Skills needed to solve this assignment</h1>
 <ul>
-<li>Create a random lightning algorithm, and visualize the result!</li>
-<li>The lightning should be a random walk from top to bottom.</li>
-<li>At each step, there is a 1% chance of forking.</li>
-<li>Each fork in itself is a new random walk.</li>
-<li>The forks do not need to fork further.</li>
-<li>Visualize the lightning, preferably using black background and
-blue/white foreground color.</li>
-<li>(extra point) Try to do this using no loops! (loops are ok, but you
-can earn less points)</li>
-<li>(extra point) Create an animation using gganimate, where the
-lightning hits from above to below.</li>
+<li>Using R and RStudio, reading data</li>
+<li>Reporting using RMarkdown</li>
+<li>Using Git and Github (for submitting the task)</li>
+<li>Data manipulation (e.g. dplyr, tidyr), and working with factors
+(forcats)</li>
+<li>Data visuzlization (ggplot2)</li>
+</ul>
+<div id="task-1-climbing-expeditions" class="section level2">
+<h2>Task 1: Climbing expeditions</h2>
+<p>The 2020-09-22 TidyTueday datasets are about climbing expeditions.
+From the three datasets, use the “expeditions”. Reproduce the plot
+below! Notice a few things:</p>
+<ul>
+<li>Use <code>forcats::fct_lump()</code> to get the 15 most frequent
+peaks, and drop the “Other” category.</li>
+<li>The bars are ordered by the sum of all expeditions (use
+<code>fct_reorder()</code>).</li>
+<li>The bar colors use the viridis palette and light theme.</li>
 </ul>
 </div>
-<div id="dataset" class="section level1">
-<h1>Dataset</h1>
-<p>There is no dataset for this project. You have to simulate from
-scratch!</p>
+<div id="task-2-phds-awarded" class="section level2">
+<h2>Task 2: PhDs awarded</h2>
+<p>The 2019-02-19 TidyTueday dataset is about phd-s awarded by year and
+field. There is only one dataset, it is called
+<code>phd_by_field</code>. Reproduce the plot below!</p>
+<p>Notes:</p>
+<ul>
+<li>First you have to aggregate the data to count all phd-s by broad
+fields.</li>
+<li>To make the x axis breaks pretty, use
+<code>scales::pretty_breaks()</code>, to make the y axis labels comma
+formatted, use <code>scales::comma_format()</code>.</li>
+<li>The line size is 1.2, the colors are from the brewer “Dark2”
+palette. The theme is set to minimal.</li>
+</ul>
 </div>
-<div id="example-lightning" class="section level1">
-<h1>Example lightning</h1>
-<div class="figure">
-<img src="data:image/png;base64,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" alt />
-<p class="caption">Lightning</p>
+<div id="task-3-commute-in-the-us" class="section level2">
+<h2>Task 3: Commute in the US</h2>
+<p>The 2019-11-05 TidyTueday dataset is about commuting to work in each
+city in the US by bike or on foot. There is only one dataset, it is
+called <code>commute</code>. Reproduce the plot below!</p>
+<p>Notes:</p>
+<ul>
+<li>First you have to aggregate the data to count all commutes by
+state.</li>
+<li>Both axis scales are log transformed and the labels comma formatted,
+using <code>scales::comma_format()</code></li>
+<li>The point size is 2, . The theme is set to light.</li>
+</ul>
 </div>
 </div>
 
