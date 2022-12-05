@@ -7,7 +7,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse)
 library(matrixStats)
 library(reshape2)
@@ -107,7 +107,7 @@ lightning[ ,which(prob_vector == 0)] = lightning[, length_of_lightning]
 plot = ggplot(data= as.data.frame(lightning), aes(x = 1:length(lightning[, 1]), y = lightning[,1])) + ylim(0,500)
 
 for(i in names(as.data.frame(lightning))){
-  plot = plot + geom_line(aes(y = .data[[i]]), col = "yellow")
+  plot = plot + geom_line(aes(y = .data[[i]]), col = "white")
 }
   
   

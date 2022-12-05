@@ -15,7 +15,7 @@ editor_options:
 -   String manipulation (e.g. stringr)
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse)
 library(readr)
 ```
@@ -60,12 +60,12 @@ test %>% str_remove_all("[:digit:]") %>% str_remove_all("oz|drops|dashes|dash|dr
 
 test_wo_n = str_remove_all(test, "[:digit:]")
 test_wo_n
-test_clear = str_remove_all(test_wo_n, "oz|drops|dashes|dash|drop|abv|% abv|[()]|/")
+test_clear = str_remove_all(test_wo_n, "oz|bsp|drops|dashes|dash|drop|abv|% abv|[()]|/")
 str_squish(test_clear)
 test_clean = as.vector(str_split(str_squish(test_clear), "<br>", simplify = TRUE))
 test_clean_new = c()
 for(i in 1:length(test_clean)){
-  test_clean_new[i] = str_remove_all(test_clean[i], " ")
+  test_clean_new[i] = str_trim(test_clean[i])
 }
 ```
 
@@ -76,14 +76,14 @@ for(i in 1:length(test_clean)){
 str_cleaner = function(str){
   clean_str = str %>% 
     str_remove_all("[:digit:]") %>%
-      str_remove_all("oz|drops|dashes|dash|drop|abv|% abv|[()]|/|[.]") %>%
+      str_remove_all("oz|drops|bsp|or|dashes|dash|drop|abv|% abv|[()]|/|[.]") %>%
         str_squish() %>%
           str_split("<br>", simplify = TRUE)
   
   clean_str = as.vector(clean_str)
   clean_new = c()
   for(i in 1:length(clean_str)){
-    clean_new[i] = str_remove_all(clean_str[i], " ")
+    clean_new[i] = str_trim(clean_str[i])
   }
   return(clean_new)
 }
@@ -170,7 +170,7 @@ df[most_ing_index,1]
 
 ### Solution: 
 
-There are 30 rare ingredients.
+There are 28 rare ingredients.
 
 ```{r}
 length(names(which(table(sorted_ings) == 1)))
@@ -229,8 +229,8 @@ df = as.data.frame(df)
 df_clean = as.data.frame(df_clean)
 
 n_cocktails = nrow(df)
-ing_matrix = matrix("", n_cocktails, length(unique_ings)+1)
-colnames(ing_matrix) = c("names", names(table(sorted_ings)))
+ing_matrix = matrix("", n_cocktails, length(unique_ings))
+colnames(ing_matrix) = names(table(sorted_ings))
 rownames(ing_matrix) = df[,1]
 
 for(i in 1:nrow(df_clean)){
