@@ -95,7 +95,7 @@ phd_plot_data = tt_phd %>%
 ### Plotting
 ```{r, phd_plotting}
 p2 = ggplot(phd_plot_data, aes(x = phd_by_field.year, y = n, colour = phd_by_field.broad_field)) +
-        geom_line() +
+        geom_line()
 
 p2
 ```

@@ -10,6 +10,8 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(matrixStats)
+library(reshape2)
+library(gganimate)
 ```
 
 
@@ -31,79 +33,36 @@ There is no dataset for this project. You have to simulate from scratch!
 # Example lightning
 
 ![Lightning](assignment_7_example/example_lightning.png)
-# Random walks with branching
 
-The main idea behind the algorithm was to use the flexible nature of the vector object in R.
-In every iteration I tested whether there is a branching, and if there was I added a new element to the current step vector.
-This vector contained the current horizontal position of the lightning, the vertical position was incremented in every iteration with one.
-
-
-## Creating the lightning settings
-```{r, settings}
-size_x = size_y = 256
-canvas = matrix(0, size_x, size_y)
-
-#initial value
-canvas[1, 129] = 1
-
-```
-
-
-## Creating the lighning algorithm with for loops
-
-```{r, lightning_algorithm}
-lightning_position = list(c(129))
-possible_steps = c(-1, 0, 1)
-
-for(rows in 2:nrow(canvas)){
-  current_steps  = lightning_position[[rows - 1]] 
-  alpha = runif(1)
-  if(alpha < 0.01){
-    current_steps = c(current_steps, current_steps[1])
-    lightning_position[[rows]] = 
-      c(current_steps + sample(possible_steps,length(current_steps), replace = TRUE))
-  } else {
-    lightning_position[[rows]] = 
-      c(current_steps + sample(possible_steps, length(current_steps), replace = TRUE))
-    canvas[rows, lightning_position[[rows]]] = 1
-  }
-  
-}
-
-```
-
-
-## Plot the results
-
-```{r, plotting1}
-
-plot1 = ggplot(data = as.data.frame(colCumsums(canvas)), aes(x = 1:size_x))
-
-for(i in 1:size_x){
-  plot1 = plot1 + geom_line(y = as.data.frame(colCumsums(canvas))[,i], col = "black")
-}
-
-plot1
-
-```
-
-
-
-## Vectorised lightning algorithm 
+# Vectorised lightning algorithm 
 
 If we want to write this algorithm without explicit for loops, we can do 2 things: 1) use an implicit loop like apply or map (from package purrr), or vectorise the whole algorithm. In the following we are going to do the latter.
 
-First we are creating a matrix filled with a random walk which will be the trajectory of the main lightning. Then we will delete the lower triangular matrix of the transposed matrix and fill it with random trajectories. This will represent a lightning which is branching in every iteration. Last, we are creating a matrix with binary values, which will signal whether the given branching happened or not. A row will be filled with 1-s with 0.01 probabilty.
+First we are creating a matrix filled with a random walk which will be the trajectory of the main lightning. Then we will delete the lower triangular matrix and fill it with random trajectories. This will represent a lightning which is branching in every iteration. Last, we are creating a matrix with binary values, which will signal whether the given branching happened or not. A row will be filled with 1-s with 0.01 probabilty. 
+
+The result matrix will contain columns with 0-s and at least one random walk. To only have the random walks we are copying one of the random walks to the zero valued columns.
+
 
 ### Creating a random walk
-```{r, loopless_lightning1}
-starting_value = 16
-length_of_lightning = 16
+
+A in the simplest case a random walk is a cumulative sum of random samples from a vector containing -1, 0 and 1 as the directions of the step. 
+
+So as a first step we are declaring the starting value of our lightning and how long we want to simulate.
+And then we are creating the main random walk. 
+
+```{r, loopless_lightning}
+starting_value = 256
+length_of_lightning = 512
 main_lightning = cumsum(sample(c(-1,0,1), size = length_of_lightning, replace = TRUE))
 
 ```
 
 ### Creating the lightning matrix which is branching in every step.
+
+First we are filling a matrix with the main random walk (row = column = length_of_lightning). Then we are creating the branching walks, which will be modifications of the original random walk. We are deleting the lower triangular elements of this matrix and then we calculate the columnwise cumulative sums to creating the modifications of the original branching. 
+
+We will get a lightning which branches every step by adding the random branching modifications to the original matrix and then scaling the results by the starting value. 
+
 ```{r, loopless_lightning1}
 
 
@@ -121,10 +80,12 @@ ever_branching_lightning = ever_branching_lightning + random_branches_matrix + s
 ```
 
 ### Creating the probability matrix to decide on the branching
+
+Last, we need to control for the branching behaviour. We are simulating a vector of uniform random values and adding a 1 to the ending of the vector. This one will ensure that the original random walk is present in the plot as the main branch. We are transforming this probability vector with a trick (prob_vector = c(as.numeric(prob_vector < 0.01), 1)) to a binary vector. Then we are creating a matrix from this vector, which will be our indicator of which column we need to delete (e.g no branching).
 ```{r, loopless_lightning2}
 
-prob_vector = runif(length_of_lightning - 1)
-prob_vector = c(as.numeric(prob_vector < 0.1), 1)
+prob_vector = runif(length_of_lightning -1)
+prob_vector = c(as.numeric(prob_vector < 0.01), 1)
 
 prob_rep_vector = rep(prob_vector, length_of_lightning)
 prob_matrix = t(matrix(prob_rep_vector, length_of_lightning, length_of_lightning, byrow = TRUE))
@@ -132,23 +93,31 @@ prob_matrix = t(matrix(prob_rep_vector, length_of_lightning, length_of_lightning
 ```
 
 ### Final lightning matrix
+
+Now our matrix contains a lot of zeros, which will make our lightning look bad, so I am refilling the zero columns with the original random walk. 
+
 ```{r, loopless_lightning3}
 
-final_lightning = t(ever_branching_lightning * prob_matrix)
-print(final_lightning)
-
-
-
+lightning = t(ever_branching_lightning * prob_matrix)
+lightning[ ,which(prob_vector == 0)] = lightning[, length_of_lightning]
 ```
 
+```{r, plotting2}
 
-```{r, plotting1}
+plot = ggplot(data= as.data.frame(lightning), aes(x = 1:length(lightning[, 1]), y = lightning[,1])) + ylim(0,500)
 
-plot2 = ggplot(data = as.data.frame(final_lightning), aes(x = 1:length_of_lightning))
-
-for(i in 1:size_x){
-  plot2 = plot2 + geom_line(y = as.data.frame(final_lightning)[i,], col = "black")
+for(i in names(as.data.frame(lightning))){
+  plot = plot + geom_line(aes(y = .data[[i]]), col = "yellow")
 }
+  
+  
+custom_theme = function(){
+  theme_void() %+replace% theme(panel.background = element_rect("black"))
+}
+plot + coord_flip()  + scale_x_reverse() + custom_theme() 
 
-plot2
 ```
+
+
+
+

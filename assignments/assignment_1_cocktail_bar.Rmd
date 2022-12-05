@@ -116,16 +116,25 @@ df_clean
 
 Before opening the bar, you need to find a reliable supplier that has all the ingredients. You need to send a list of all possible ingredients you will need. They don't need the quantities (i.e. how many of these are needed), just the names of the ingredients.
 
+### Solution: 
+
+By getting the clean_strings list we received the cleaned ingredient vector of each cocktail. (I know the cleaning is not perfect, but I can`t seem to figure out how to not delete the spaces, just the ones that are unnecessary) Flattening this list we get a vector of ingredients, with duplicates. By sorting it we get an alphabetical order, and to filter out the duplicates we call the unique function.
+
 ```{r}
 sorted_ings = sort(list_of_ings)
+unique_ings = unique(sorted_ings)
+print(unique_ings)
 ```
 
 ## 4. Number of unique ingredients
 
 How many different ingredients you will need?
 
+### Solution: 
+
+Since we have the alphabetical unique ingredient vector, we just get the length of it.
+
 ```{r}
-unique_ings = unique(sorted_ings)
 length(unique_ings)
 ```
 
@@ -133,43 +142,78 @@ length(unique_ings)
 
 What are the 10 most frequently used ingredients? If there are ties, you can list more than 10.
 
+### Solution: 
+
+Base R`s table function creates a frequency table based on a vector (or matrix or dataset). So we apply the table function in the sorted ingredients vector (the one with duplicates), and order it in a decreasing manner. Last, we index the first 10 elements, but to check whether there are ties, I indexed the first 12 and I saw there is a tie in the 10th place, so the final indexing is 1:11.
+
 ```{r}
-sort(table(sorted_ings), decreasing = TRUE)[1:10]
+sort(table(sorted_ings), decreasing = TRUE)[1:11]
 ```
 
 ## 6. Which cocktail(s) has/have the most ingredients?
 
 Count the number of ingredients and filter all the cocktails that has that many.
 
+
+### Solution: 
+
+I use the original clean_strings list, and list apply the length function to get a list of lengths. Then I find the maximum length, by applying which.max. This gives me back an index I can use to index the original dataframe.
+
+
 ```{r}
 most_ing_index = which.max(lapply(clean_strings, length))
 
-df[2,1]
+df[most_ing_index,1]
 ```
 
 ## 7. How many ingredients appear in only one cocktail (rare ingredient)?
 
-Count all cocktails with only one ingredient, and
+### Solution: 
+
+There are 30 rare ingredients.
 
 ```{r}
-names(which(table(sorted_ings) == 1))
+length(names(which(table(sorted_ings) == 1)))
 ```
 
 ## 8. Which cocktail has an ingredient that is only used in one cocktail?
 
+### Solution: 
+
+I created a function that checks whether there a rare ingredient is present in a recipe. So I apply this function in my original list, to get a boolean vector indicating the cocktails that require rare ingredients. Then I cabn use this vector to index the original dataframe. 
+
 ```{r}
+t_ings = table(sorted_ings)
+rare_ings = names(t_ings[t_ings == 1])
+
+isRareIng = function(v){
+  return(any(rare_ings %in% v))
+}
+
+is_rare_cocktail = unlist(lapply(clean_strings, isRareIng))
+
+df[is_rare_cocktail, 1]
+
+
 
 ```
 
 ## 9. What are the cocktails without rare ingredients?
 
+### Solution: 
+I negate the rare ingredient indicator vector to get the indicator if a cocktail is not containing rare ingredients.
+
 ```{r}
-  
+is_not_rare_cocktail = !is_rare_cocktail
+df[is_not_rare_cocktail, 1]
 ```
 
 ## 10. Create a cheat sheet for the bartender!
 
 Create a matrix that shows all cocktail names as rows and all ingredients as columns. When a cocktail requires an ingredient, there should be an "X" in the cell, otherwise, the cell should remain empty. Example:
+
+### Solution: 
+First, I create an empty ("" string) matrix, and add the rownames, from the original df and the ingredient names from the sorted ingredients vector. Then I implented a loop to go through the long formatted clean dataframe, and put an X in each place where I need to.
 
 ```{r echo=FALSE}
 tribble(~name, ~Lime, ~`White rum`, ~`Cane sugar`, ~`Coca-cola`, ~Mint, ~Soda,
@@ -188,13 +232,14 @@ n_cocktails = nrow(df)
 ing_matrix = matrix("", n_cocktails, length(unique_ings)+1)
 colnames(ing_matrix) = c("names", names(table(sorted_ings)))
 rownames(ing_matrix) = df[,1]
-ing_matrix
 
 for(i in 1:nrow(df_clean)){
   current_ing = df_clean[i,8]
   current_cocktail = df_clean[i, 1]
   ing_matrix[current_cocktail, current_ing] = "X"
 }
+head(ing_matrix)
+
 
 ```
 
