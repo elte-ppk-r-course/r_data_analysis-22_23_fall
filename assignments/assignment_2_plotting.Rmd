@@ -1,6 +1,6 @@
 ---
 title: 'Assignment 2: Data visualization'
-author: "Tamas Nagy"
+author: "Bence Gergely"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -17,7 +17,7 @@ You will have to create 3 plots based on the datasets and instructions detailed 
 -   Data visuzlization (ggplot2)
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse)
 library(tidytuesdayR)
 ```
@@ -30,7 +30,48 @@ The 2020-09-22 TidyTueday datasets are about climbing expeditions. From the thre
 -   The bars are ordered by the sum of all expeditions (use `fct_reorder()`).
 -   The bar colors use the viridis palette and light theme.
 
+### Read tidytuesday data
+
+```{r, include=TRUE}
+tt_expedition = tt_load("2020-09-22")
+tt_expedition = tt_expedition["expeditions"]
+tt_expedition = as.data.frame(tt_expedition)
+```
+
+### Wrangle data
+
 ```{r}
+find_most_frequent_peak = tt_expedition %>% 
+                            count(expeditions.peak_name) %>%
+                            arrange(desc(n))
+
+find_most_frequent_peak = find_most_frequent_peak[1:15, 1]
+
+is_most_frequent = tt_expedition[, 3] %in% find_most_frequent_peak
+
+expedition_plot_data = tt_expedition[is_most_frequent, ]
+
+expedition_plot_data = expedition_plot_data %>%
+                        count(expeditions.season, expeditions.peak_name) %>%
+                          arrange(desc(n))
+
+
+```
+
+### Plotting 
+
+```{r}
+p1 = ggplot(expedition_plot_data, aes(x = n, y = reorder(expeditions.peak_name, n), fill = expeditions.season)) +
+      geom_bar(position = "stack", stat = "identity")
+
+p1 + 
+  ggtitle("The 15 most popular peaks stacked by season of expedition") + 
+  xlab("Number of expeditions") +
+  ylab("") +
+  guides(fill=guide_legend(title="season")) +
+  theme(legend.position = "bottom") +
+  scale_fill_viridis_d() +
+  theme_light()
 
 ```
 
@@ -44,8 +85,42 @@ Notes:
 -   To make the x axis breaks pretty, use `scales::pretty_breaks()`, to make the y axis labels comma formatted, use `scales::comma_format()`.
 -   The line size is 1.2, the colors are from the brewer "Dark2" palette. The theme is set to minimal.
 
-```{r}
+### Read tidytuesday data
 
+
+```{r, phd_data}
+tt_phd = tt_load("2019-02-19")
+tt_phd = tt_phd["phd_by_field"]
+tt_phd = as.data.frame(tt_phd)
+```
+
+### Data wrangling
+
+```{r, phd_wrangling}
+phd_plot_data = tt_phd %>% 
+                  group_by(phd_by_field.year, phd_by_field.broad_field) %>%
+                  summarise(doctors = sum(phd_by_field.n_phds, na.rm = TRUE))
+
+
+```
+
+### Plotting
+```{r, phd_plotting}
+p2 = ggplot(phd_plot_data, aes(x = phd_by_field.year, y = doctors, colour = phd_by_field.broad_field)) +
+        geom_line(size = 1.2)
+
+p2 + 
+  ggtitle("Number of awarded Ph.D.-s in the US by year") +
+  xlab("") +
+  ylab("") +
+  labs(colour = "Broad field") +
+  scale_x_continuous(breaks = scales::pretty_breaks(5)) +
+  scale_y_continuous(labels= scales::comma_format(scale = 1)) +
+  theme_minimal() +
+  scale_colour_brewer(palette = "Dark2")
+  
+  
+  
 ```
 
 ## Task 3: Commute in the US
@@ -58,6 +133,35 @@ Notes:
 -   Both axis scales are log transformed and the labels comma formatted, using `scales::comma_format()`
 -   The point size is 2, . The theme is set to light.
 
-```{r}
 
+### Read data from tidytuesday project
+
+```{r, commute_data}
+tt_commute = tt_load("2019-11-05")["commute"]
+tt_commute = as.data.frame(tt_commute)
+```
+
+### Data wrangling
+
+```{r, commute_wrangling}
+commute_plot_data = tt_commute %>%
+                      group_by(commute.state_abb, commute.mode, commute.state_region) %>%
+                      summarise(commuters = sum(commute.n)) %>%
+                      pivot_wider(names_from = commute.mode, values_from = commuters)
+                      
+```
+
+```{r, commute_plotting}
+p3 = ggplot(commute_plot_data, aes(x = Walk, y = Bike, colour = commute.state_region, label = commute.state_abb)) + 
+      geom_point(size = 2) +
+      geom_text(colour = "black")
+
+p3 + 
+  ggtitle("Title number of people walking vs. biking to work in each USA state") +
+  scale_x_log10(labels= scales::comma_format(scale = 1)) +
+  scale_y_log10(labels= scales::comma_format(scale = 1), limits = c(25, NA)) +
+  xlab("Number of ppl biking to work (log N)") +
+  ylab("Number of ppl walking to work (log N)") +
+  labs(colour = "State region") + 
+  theme_light()
 ```

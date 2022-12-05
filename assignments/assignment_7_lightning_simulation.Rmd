@@ -1,14 +1,17 @@
 ---
 title: "Assignment 7: Lightning simulation"
-author: "Tamas Nagy"
+author: "Bence Gergely"
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(tidyverse)
+library(matrixStats)
+library(reshape2)
+library(gganimate)
 ```
 
 
@@ -31,7 +34,90 @@ There is no dataset for this project. You have to simulate from scratch!
 
 ![Lightning](assignment_7_example/example_lightning.png)
 
-```{r}
+# Vectorised lightning algorithm 
+
+If we want to write this algorithm without explicit for loops, we can do 2 things: 1) use an implicit loop like apply or map (from package purrr), or vectorise the whole algorithm. In the following we are going to do the latter.
+
+First we are creating a matrix filled with a random walk which will be the trajectory of the main lightning. Then we will delete the lower triangular matrix and fill it with random trajectories. This will represent a lightning which is branching in every iteration. Last, we are creating a matrix with binary values, which will signal whether the given branching happened or not. A row will be filled with 1-s with 0.01 probabilty. 
+
+The result matrix will contain columns with 0-s and at least one random walk. To only have the random walks we are copying one of the random walks to the zero valued columns.
+
+
+### Creating a random walk
+
+A in the simplest case a random walk is a cumulative sum of random samples from a vector containing -1, 0 and 1 as the directions of the step. 
+
+So as a first step we are declaring the starting value of our lightning and how long we want to simulate.
+And then we are creating the main random walk. 
+
+```{r, loopless_lightning}
+starting_value = 256
+length_of_lightning = 512
+main_lightning = cumsum(sample(c(-1,0,1), size = length_of_lightning, replace = TRUE))
 
 ```
+
+### Creating the lightning matrix which is branching in every step.
+
+First we are filling a matrix with the main random walk (row = column = length_of_lightning). Then we are creating the branching walks, which will be modifications of the original random walk. We are deleting the lower triangular elements of this matrix and then we calculate the columnwise cumulative sums to creating the modifications of the original branching. 
+
+We will get a lightning which branches every step by adding the random branching modifications to the original matrix and then scaling the results by the starting value. 
+
+```{r, loopless_lightning1}
+
+
+rep_main_lightning = rep(main_lightning, times = length_of_lightning)
+ever_branching_lightning = matrix(rep_main_lightning,length_of_lightning, length_of_lightning, byrow = TRUE)
+ever_branching_lightning[upper.tri(ever_branching_lightning)] = 0
+
+branching_walks = sample(c(-1,0,1), size = length_of_lightning * length_of_lightning, replace = TRUE)
+random_branches_matrix = matrix(branching_walks, length_of_lightning, length_of_lightning, byrow = TRUE)
+random_branches_matrix[lower.tri(random_branches_matrix)] = 0
+random_branches_matrix = rowCumsums(random_branches_matrix)
+
+ever_branching_lightning = ever_branching_lightning + random_branches_matrix + starting_value
+
+```
+
+### Creating the probability matrix to decide on the branching
+
+Last, we need to control for the branching behaviour. We are simulating a vector of uniform random values and adding a 1 to the ending of the vector. This one will ensure that the original random walk is present in the plot as the main branch. We are transforming this probability vector with a trick (prob_vector = c(as.numeric(prob_vector < 0.01), 1)) to a binary vector. Then we are creating a matrix from this vector, which will be our indicator of which column we need to delete (e.g no branching).
+```{r, loopless_lightning2}
+
+prob_vector = runif(length_of_lightning -1)
+prob_vector = c(as.numeric(prob_vector < 0.01), 1)
+
+prob_rep_vector = rep(prob_vector, length_of_lightning)
+prob_matrix = t(matrix(prob_rep_vector, length_of_lightning, length_of_lightning, byrow = TRUE))
+
+```
+
+### Final lightning matrix
+
+Now our matrix contains a lot of zeros, which will make our lightning look bad, so I am refilling the zero columns with the original random walk. 
+
+```{r, loopless_lightning3}
+
+lightning = t(ever_branching_lightning * prob_matrix)
+lightning[ ,which(prob_vector == 0)] = lightning[, length_of_lightning]
+```
+
+```{r, plotting2}
+
+plot = ggplot(data= as.data.frame(lightning), aes(x = 1:length(lightning[, 1]), y = lightning[,1])) + ylim(0,500)
+
+for(i in names(as.data.frame(lightning))){
+  plot = plot + geom_line(aes(y = .data[[i]]), col = "white")
+}
+  
+  
+custom_theme = function(){
+  theme_void() %+replace% theme(panel.background = element_rect("black"))
+}
+plot + coord_flip()  + scale_x_reverse() + custom_theme() 
+
+```
+
+
+
 
