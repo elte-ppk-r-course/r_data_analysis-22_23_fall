@@ -1,6 +1,6 @@
 ---
 title: "Assignment 1: The cocktail bar (data transformation and manipulation)"
-author: "Tamas Nagy"
+author: "Szlovicsák Béla"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -32,6 +32,7 @@ Note: There are several different ways to solve these tasks, feel free to come u
 Read the cocktail dataset from: <https://github.com/nthun/cocktail-balance> You can also find the codebook there.
 
 ```{r}
+raw_cocktail <- read_tsv("https://raw.githubusercontent.com/nthun/cocktail-balance/master/cocktail_data.tsv")
 
 ```
 
@@ -39,7 +40,27 @@ Read the cocktail dataset from: <https://github.com/nthun/cocktail-balance> You 
 
 The ingredients are currently in a single cell for each cocktail. It would be better to put them in separate rows. Also, the variable should be cleaned of all quantities (e.g. 1/2 oz, 2 dashes, etc.), and the indicator of alcohol content (e.g. 47.3% abv). You will need to use this cleaned table in later tasks.
 
+
+(?!\\d*-proof)|
+|\\(\\.% abv\\)
+
+|(^\\s+)|
+
 ```{r}
+cocktails <- raw_cocktail %>% 
+  separate(ingredients, 
+           sep = "<br/>|<br>|<b4/>", 
+           into = c("1", "2", "3", "4", "5", "6")
+           ) %>% 
+  pivot_longer(cols = c("1", "2", "3", "4", "5", "6"),
+               names_to = "ingredient_number",
+               values_to = "ingredient") %>% 
+  filter(!is.na(ingredient)) %>% 
+  mutate(ingredient = str_remove_all(
+          ingredient,
+          "(\\d/\\d)|(^\\d+)|(\\.\\d+)|(oz)|(drops)|(drop)|(bsp)|(dashes)|(dash)|(\\u008f)|\\(\\d+%\\sabv\\)|\\(\\d+\\.\\d%\\sabv\\)")) %>% 
+  mutate(ingredient = str_trim(ingredient))
+  
 
 ```
 
