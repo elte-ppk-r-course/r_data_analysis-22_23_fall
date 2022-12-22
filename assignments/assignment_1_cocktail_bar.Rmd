@@ -32,7 +32,7 @@ Note: There are several different ways to solve these tasks, feel free to come u
 Read the cocktail dataset from: <https://github.com/nthun/cocktail-balance> You can also find the codebook there.
 
 ```{r}
-coctail_balance <- read_tsv("https://raw.githubusercontent.com/nthun/cocktail-balance/master/cocktail_data.tsv")
+coctail_balance_raw <- read_tsv("https://raw.githubusercontent.com/nthun/cocktail-balance/master/cocktail_data.tsv")
 ```
 
 ## 2. Transform the data table and clean the ingredient variable!
@@ -40,17 +40,19 @@ coctail_balance <- read_tsv("https://raw.githubusercontent.com/nthun/cocktail-ba
 The ingredients are currently in a single cell for each cocktail. It would be better to put them in separate rows. Also, the variable should be cleaned of all quantities (e.g. 1/2 oz, 2 dashes, etc.), and the indicator of alcohol content (e.g. 47.3% abv). You will need to use this cleaned table in later tasks.
 
 ```{r}
-coctail_balance <- coctail_balance %>%
+coctail_balance_clean <- coctail_balance_raw %>%
   separate_rows(ingredients, sep = "<br/>") %>% #separating rows by a given string in the character vector
-  separate_rows(ingredients, sep = "<br>")
+  separate_rows(ingredients, sep = "<br>") %>%
+  separate_rows(ingredients, sep = "<b/>")
 
-coctail_balance$ingredients <- str_replace_all(coctail_balance$ingredients, pattern = "\\b\\d+[%/\\d]*\\s*(?:oz|dash|fl[\\s.]?oz|abv)\\b", replacement = "")
-coctail_balance$ingredients <- str_replace_all(coctail_balance$ingredients, pattern = "[:digit:]", replacement = "")
-coctail_balance$ingredients <- str_replace_all(coctail_balance$ingredients, pattern = "\\.", replacement = "")
-coctail_balance$ingredients <- str_replace_all(coctail_balance$ingredients, pattern = "\\(\\)", replacement = "")
-coctail_balance$ingredients <- str_trim(coctail_balance$ingredients)
+coctail_balance_clean$ingredients <- str_replace_all(coctail_balance_clean$ingredients, pattern = "\\b\\d+[%/\\d]*\\s*(?:oz|dash|fl[\\s.]?oz|abv)\\b", replacement = "")
+coctail_balance_clean$ingredients <- str_replace_all(coctail_balance_clean$ingredients, pattern = "[:digit:]", replacement = "")
+coctail_balance_clean$ingredients <- str_replace_all(coctail_balance_clean$ingredients, pattern = "\\.", replacement = "")
+coctail_balance_clean$ingredients <- str_replace_all(coctail_balance_clean$ingredients, pattern = "\\(\\)", replacement = "")
+coctail_balance_clean$ingredients <- str_trim(coctail_balance_clean$ingredients)
 
 #this was an extremely redundant call of regex functions but this is the best i can do for now with regex
+#also i had a hard time using the %>% operator with stringr so I stayed with the base R option with the $ operator
 ```
 
 ## 3. All ingredients in alphabetical order
