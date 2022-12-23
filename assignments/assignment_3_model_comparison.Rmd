@@ -149,61 +149,46 @@ ggdensity(pain_experience$pain, xlab = "normality of pain - filtered")
 In order to test the more complex model for outliers and to test the assumptions first build the model.
 
 ```{r}
-
+complex_model <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + cortisol_saliva, data=pain_experience)
+summary(complex_model)
 ```
+
 
 #### Checking for influential outliers
 
 Check for outlier values in the model.
 
 ```{r}
-
+complex_model %>%
+  augment() %>%
+  arrange(desc(.cooksd)) %>%
+  head()
 ```
 
 #### Checking assumptions
-
-Check the normality assumption.
-
 ```{r}
-
+#done in one go
 ```
 
-Check the linearity assumption.
-
-```{r}
-
-```
-
-Check the homoscedasticty assumption (homogeneity of variance).
-
-```{r}
-
-```
-
-Check the multicollinearity assumption.
-
-(VIF above 5), or a VIF threshold of 3 is recommended in this paper: http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2009.00001.x/full
-
-Some info about VIF: 
-https://statisticalhorizons.com/multicollinearity
-http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity-in-regression-analysis
-
-```{r}
-
-```
 
 ### Making decision based on model diagnostics
 
 If based on the assumption tests you decide to drop a predictor variable you should do that here. Create your updated model.
 
 ```{r}
-
+complex_model2 <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data=pain_experience)
+summary(complex_model2)
+aic_complex <- AIC(complex_model2)
+aic_complex
+tab_model(complex_model2)
 ```
 
 #### Checking outliers of the updated model
 
 ```{r}
-
+complex_model2 %>%
+  augment() %>%
+  arrange(desc(.cooksd))
 ```
 
 #### Checking assumptions of the updated model
@@ -211,33 +196,30 @@ If based on the assumption tests you decide to drop a predictor variable you sho
 Normality assumption
 
 ```{r}
-
+check_model(complex_model2)
+#the updated complex model is overall significant (F(6,151) = 13.33, p < 0.001, AIC = 528.673), with significant predictor variables like pan catastrophizing (p = 0.003) and cortisol serum (p < 0.001).
 ```
 
-Linearity assumption
 
-```{r}
-
-```
-
-Homoscedasticty assumption (homogeneity of variance)
-
-```{r}
-
-```
-
-Multicollinearity assumption
-
-```{r}
-
-```
 
 ## Model comparison
 
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
 ```{r}
+simple_model <- lm(pain ~ age + sex, data = pain_experience)
+simple_model
+tab_model(simple_model)
+aic_simple <- AIC(simple_model)
 
+#age is a significant main effect (p0.001) but not gender in our model, which is significant (F(2,156) = 7.511, p 0.001, AIC = 574.196).
+
+#the dependent variable's explained variance is **adj R2 = 0.07614**, or 7,6%, which is lower than we would like it to be in the more sophisticated model.
+
+
+#age's confidence interval is [-0.13, -0.04], which excludes zero, but sex's confidence interval is [-0.35, 0.56], which includes zero.
+
+#Y = 8.49145 + -0.08906 * x1 + 0.10287 * x2 is the regression equation.
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
