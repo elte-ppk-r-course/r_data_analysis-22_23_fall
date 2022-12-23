@@ -1,0 +1,27 @@
+---
+title: "final_assignment"
+author: "Marton Aron Varga"
+date: '2022 12 23 '
+output: html_document:
+  css: final.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# EDA
+
+Insert your exploratory data analysis content here.
+
+# Model
+
+Insert your modeling content here.
+
+# Evaluation
+
+Insert your evaluation content here.
+
+# Discussion
+
+Insert your discussion content here.
