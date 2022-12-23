@@ -72,7 +72,7 @@ length(ingredients)
 What are the 10 most frequently used ingredients? If there are ties, you can list more than 10.
 
 ```{r}
-separatedCocktail %>% count(separatedCocktail$ingredient, sort = TRUE) %>% print(n = 10)
+separatedCocktail %>% count(separatedCocktail$ingredient, sort = TRUE) %>% top_n(10)
 ```
 
 ## 6. Which cocktail(s) has/have the most ingredients?
