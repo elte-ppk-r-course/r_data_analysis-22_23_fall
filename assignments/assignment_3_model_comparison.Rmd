@@ -59,7 +59,20 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
+library(readxl)
+library(openxlsx)
+library(tidyverse)
+library(performance)
+library(see)
+library(patchwork)
+library(broom)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(lmtest)
+library(ggpubr)
 
+pain_exp <- read_excel(file.choose())
 ```
 
 ## Data and model diagnostics 
@@ -69,7 +82,48 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
+pain_experience %>%
+  summary()
+```
 
+```{r}
+ggplot(pain_experience, aes(age, pain)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+ggplot(pain_experience, aes(age, IQ)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+ggplot(pain_experience, aes(age, weight)) +
+  geom_point()
+```
+
+```{r}
+is.factor(pain_experience$sex)
+as.factor(pain_experience$sex)
+```
+
+```{r}
+ggdensity(pain_experience$IQ, xlab = "normality of IQ")
+
+#seems wrong
+```
+
+```{r}
+ggdensity(pain_experience$pain, xlab = "normality of pain")
+```
+
+```{r}
+ggdensity(pain_experience$household_income, xlab = "normality of household income")
+```
+
+```{r}
+ggdensity(pain_experience$age, xlab = "normality of age")
 ```
 
 #### Correct coding errors
@@ -77,7 +131,16 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+pain_experience <- pain_experience %>%
+  mutate(sex = replace(sex, sex == "woman", "female")) %>%
+  filter (pain < 11) %>%
+  filter (weight > 40)
+pain_experience %>%
+  summary()
+```
 
+```{r}
+ggdensity(pain_experience$pain, xlab = "normality of pain - filtered")
 ```
 
 ### Model diagnostics
