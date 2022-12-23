@@ -2,13 +2,17 @@
 title: "Assignment 6: Logistic regression"
 author: "Marton Kovacs / Zoltan Kekecs"
 output: html_document
-editor_options: 
+editor_options: "Hunor Kis"
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(readr)
+library(haven)
+library(MASS)
+library(car)
 ```
 
 # Background story
@@ -30,7 +34,7 @@ This is the training dataset of the Titanic dataset from the Kaggle Titanic Chal
 ## Metadata
 
 ```{r echo = FALSE, warning = FALSE, message = FALSE}
-metadata <- readr::read_tsv(here::here("data/assignment_6_metadata.tsv"))
+metadata <- read_tsv("F:/Hunor/phd project/RStudio works/r_data_analysis-22_23_fall/data/assignment_6_metadata.tsv")
 
 metadata %>% 
   knitr::kable()
@@ -71,6 +75,13 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
+dataset <- read_sav("F:/Hunor/phd project/RStudio works/r_data_analysis-22_23_fall/data/assignment_6_dataset.sav") 
+
+dataset_cleaned<- dataset %>% 
+  mutate(Pclass = as.factor(Pclass),
+         Survived = as.factor(Survived),
+         Sex = as.factor(Sex),
+         Embarked = as.factor(Embarked))
 
 ```
 
@@ -78,53 +89,272 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 
 ```{r}
 
+glimpse(dataset_cleaned)
+
+dataset_cleaned %>% 
+  ggplot() +
+  aes(x = Sex, fill = Survived) +
+  geom_bar()
+
+
+dataset_cleaned %>% 
+  ggplot() +
+  aes(x = Pclass, fill = Survived) +
+  geom_bar()
+
+
+dataset_cleaned %>% 
+  ggplot() +
+  aes(x = Embarked, fill = Survived) +
+  geom_bar()
+
+dataset_cleaned %>% 
+  ggplot() +
+  aes(y = Age, x = Survived) +
+  geom_boxplot()
+
+dataset_cleaned %>% 
+  ggplot() +
+  aes(x = SibSp, fill = Survived) +
+  geom_bar()+
+  facet_grid(~Pclass)
+ 
+
+dataset_cleaned %>% 
+  ggplot() +
+  aes(x = Parch, fill = Survived) +
+  geom_bar() +
+  facet_grid(~Pclass)
+
+dataset_cleaned %>% 
+  ggplot() +
+  aes(y = Fare, x = Survived) +
+  geom_boxplot()
+
+dataset_cleaned %>% 
+  filter(Fare < 50) %>% 
+  filter(Fare > 0) %>% 
+  ggplot()+
+  aes(x = Fare, fill = Survived)+
+  geom_histogram(binwidth = 10)
+  
+
+table(is.na(dataset_cleaned$Age))  
+
+table(dataset_cleaned$Fare)
+
+table(dataset_cleaned$Embarked) 
+
+
+
 ```
 
 ## Clean the data
 
 ```{r}
 
+mean_age <- mean(dataset_cleaned$Age, na.rm = TRUE)
+bins <- c(-1, 7.9104, 14.4542, 31, 512.330)
+bins2 <-c(0, 5, 17, 25, 50, 80)
+
+dataset_cleaned<- dataset_cleaned %>% 
+  mutate(Age = if_else(is.na(Age), mean_age, Age)) %>% 
+  filter(PassengerId != 62) %>% 
+  filter(PassengerId != 830) %>% 
+  filter(PassengerId != 260) %>% 
+  filter(PassengerId != 295) %>% 
+  mutate(Fare_cat = cut(Fare, breaks = bins, labels = c("low", "medium-low", "medium", "high")) )  %>% 
+  mutate(HaveParents = if_else(Parch>0,1,0)) %>% 
+  mutate(Age_cat= cut(Age, breaks = bins2, labels = c('Infant', 'Kid', 'Young', 'Adult', 'Old')))
+  
+  
+
 ```
 
 ## Creating a datatable for Sue, Kate, and Leonardo
 
 ```{r}
+PassengerId <- c(1,2,3,4)
+Survived <- c(NA,NA,NA,NA)
+Pclass<-as.factor(c(3,3,3,3))
+Name <- c("Sue", "Kate", "Sue with parent", "Kate with parent")
+Sex <- c("female","female","female", "female")
+Age <-c(20,4,20,4)
+SibSp <- c(2,2,2,2)
+Parch <- c(0,0,1,1)
+Ticket <-c("xxx","yyy","xxx","yyy")
+Fare <-c(8,8,8,8)
+Cabin<-c(NA,NA,NA,NA)
+Embarked <- c("S","S","S","S")
+Fare_cat <- c("low", "low", "low", "low")
+HaveParents <-c(0,0,1,1)
+Age_cat <- c()
+
+df_test <- data.frame(PassengerId,
+                      Survived,
+                      Pclass,
+                      Name,
+                      Sex,
+                      Age,
+                      SibSp,
+                      Parch,
+                      Ticket,
+                      Fare,
+                      Cabin,
+                      Embarked,
+                      Fare_cat) 
+df_test <- df_test %>% 
+  mutate(Age_cat= cut(Age, breaks = bins2, labels = c('Infant', 'Kid', 'Young', 'Adult', 'Old')))
+
 
 ```
 
 ## Building the null model
 
 ```{r}
-
+null_model <- glm(Survived ~ 1,family=binomial(link='logit'), data = dataset_cleaned)
+summary(null_model)
 ```
 
 ## Building the model
 
 ```{r}
 
-```
 
-# Check the assumptions
+my_model <- glm(Survived ~Pclass + Sex + Age_cat + SibSp+ HaveParents + Fare_cat+ Embarked,family=binomial(link='logit'), data = dataset_cleaned)
+summary(my_model)
+
+```
+#Check for outliers
 
 ```{r}
+plot(my_model,4)
 
+plot(my_model, which = 5)
 ```
+#Check the normality assumption
+
+```{r}
+residuals <- residuals(my_model) 
+
+hist(residuals)
+boxplot(residuals)
+shapiro.test(residuals)
+```
+
+#Check linearity
+```{r}
+fitted_values <- fitted(my_model)
+
+plot(fitted_values, residuals, xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0)
+```
+
+#Check the homoscedasticty assumption (homogeneity of variance).
+
+```{r}
+plot(fitted_values, residuals, xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0)
+
+bptest(my_model)
+```
+#Check the multicollinearity assumption.
+
+```{r}
+vifs <- vif(my_model)
+
+vifs
+```
+
 
 # Compare the models
 
 ```{r}
+anova(null_model, my_model, test = "LRT")
 
+cat("AIC of null model:", AIC(null_model), "\n")
+cat("AIC of my_model:", AIC(my_model), "\n")
 ```
 
 # Calculate odds ratio and confidence interval
 
 ```{r}
+coef <- coef(my_model)[2]
 
+odds_ratio <- exp(coef)
+
+ci <- confint(my_model, level = 0.95)[2, ]
 ```
 
-# Report the results
+#Full data accuracy
+```{r}
+fitted_results <- predict(my_model,newdata=dataset_cleaned,type='response')
+fitted_results <- ifelse(fitted_results > 0.5,1,0)
+misClasificError <- mean(fitted_results != dataset_cleaned$Survived)
+print(paste('Accuracy',1-misClasificError))
+full_accuracy <-1-misClasificError
+```
+
+#Accuracy on survived subset
+```{r}
+dataset_cleaned_survived <- dataset_cleaned %>% 
+  filter(Survived == 1)
+
+fitted_results_survived <- predict(my_model,newdata=dataset_cleaned_survived,type='response')
+fitted_results_survived <- ifelse(fitted_results_survived > 0.5,1,0)
+misClasificError <- mean(fitted_results_survived != dataset_cleaned_survived$Survived)
+print(paste('Accuracy',1-misClasificError))
+surviveddata_accuracy <-1-misClasificError
+```
+
+
 
 ```{r}
+dataset_cleaned_notsurvived <- dataset_cleaned %>% 
+  filter(Survived == 0)
+
+
+fitted_results_notsurvived <- predict(my_model,newdata=dataset_cleaned_notsurvived,type='response')
+fitted_results_notsurvived <- ifelse(fitted_results_notsurvived < 0.5,1,0)
+misClasificError <- mean(fitted_results_notsurvived != dataset_cleaned_survived$Survived)
+print(paste('Accuracy',1-misClasificError))
+notsurviveddata_accuracy <-1-misClasificError
 
 ```
 
+# Predict for test data
+
+```{r}
+predictions <- predict(my_model, df_test, type="response")
+
+df_test <- df_test %>% 
+  mutate(predicted_survival_prob = predictions)
+```
+
+#According to the model the probalility for Sue to survive would decrease if Leonardo were there.
+
+#Reporting data
+
+```{r}
+print(my_model)
+
+summary(my_model)
+anova(null_model, my_model, test = "LRT")
+
+cat("AIC of null model:", AIC(null_model), "\n")
+cat("AIC:", AIC(my_model), "\n")
+
+
+
+cat("McFadden R^2:", 1 - (my_model$null.deviance / my_model$deviance), "\n")
+
+print(full_accuracy)
+print(surviveddata_accuracy)
+print(notsurviveddata_accuracy)
+
+df_test
+
+
+```
+
+#Discussion Based on my findings, the model that I have provided does not consider  the presence of a parent as a strong predictor. In the model it is not significant. Testing our model on the case study concludes that the probability of Sue's survival would slightly even decrease with the presence of Leonardo.

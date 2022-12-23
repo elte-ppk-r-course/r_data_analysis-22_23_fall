@@ -2,7 +2,7 @@
 title: "Assignment 3: Model comparison"
 author: "Marton Kovacs/Zoltan Kekecs"
 output: html_document
-editor_options: 
+editor_options: "Hunor Kis"
   chunk_output_type: console
 ---
 
@@ -59,6 +59,18 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
+#Setting up library
+
+library(tidyverse)
+library(dplyr)
+library(readxl)
+library(lmtest)
+
+
+setwd("F:/Hunor/phd project/RStudio works/r_data_analysis-22_23_fall/data")
+
+df_main  <- read_excel("F:/Hunor/phd project/RStudio works/r_data_analysis-22_23_fall/data/assignment_3_dataset.xlsx")
+
 
 ```
 
@@ -68,8 +80,50 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
+#Investigating the dataset for possible errors and outliers
 ```{r}
+glimpse(df_main)
 
+df_main %>%  
+  count(pain) %>% 
+  filter(pain > 10)
+
+#Pain 50 should be removed from the original dataset
+
+df_main %>%  
+  count(mindfulness) %>% 
+  filter(mindfulness > 6)
+
+#These values should be removed from the original dataset
+
+df_main %>% 
+  count(sex) 
+
+#the woman sex attribute should be changed
+
+df_main %>% 
+  ggplot()+
+  aes(x = weight)+
+  geom_histogram()
+
+# under 40 kg weight seems like something problematic, I would exclude from analysis
+```
+
+#Basic plot to check the sex and age data on dataset
+```{r}
+df_main %>% 
+  filter(pain < 10) %>% 
+  ggplot +
+  aes(y = age, x = pain)+
+  geom_point() +
+  geom_smooth(method = 'lm')
+
+df_main %>% 
+  filter(pain < 10) %>% 
+  filter(sex != 'woman') %>% 
+  ggplot +
+  aes(x = sex, y = pain)+
+  geom_boxplot() 
 ```
 
 #### Correct coding errors
@@ -77,6 +131,9 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+df_cleaned <- df_main %>% 
+  mutate(sex = if_else(sex=="male", "male", "female")) %>% 
+  filter(pain < 10, mindfulness < 6, weight > 36)
 
 ```
 
@@ -86,15 +143,19 @@ If you find values in the dataset during the EDA, that are not correct based on 
 In order to test the more complex model for outliers and to test the assumptions first build the model.
 
 ```{r}
+model_complex <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + cortisol_saliva, data = df_cleaned)
 
+summary(model_complex)
 ```
 
 #### Checking for influential outliers
 
 Check for outlier values in the model.
-
+#Creates two plots to investigate the potential outlier values: Residual vs Leverage and Cook's distance plots
 ```{r}
+plot(model_complex,4)
 
+plot(model_complex, which = 5)
 ```
 
 #### Checking assumptions
@@ -102,19 +163,35 @@ Check for outlier values in the model.
 Check the normality assumption.
 
 ```{r}
+residuals <- residuals(model_complex) 
+
+hist(residuals)
+boxplot(residuals)
+shapiro.test(residuals)
 
 ```
 
 Check the linearity assumption.
 
 ```{r}
+fitted_values <- fitted(model_complex)
+
+plot(fitted_values, residuals, xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0)
+
+
+
+
 
 ```
 
 Check the homoscedasticty assumption (homogeneity of variance).
 
 ```{r}
+plot(fitted_values, residuals, xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0)
 
+bptest(model_complex)
 ```
 
 Check the multicollinearity assumption.
@@ -127,6 +204,10 @@ http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity
 
 ```{r}
 
+vifs <- vif(model_complex)
+
+vifs
+
 ```
 
 ### Making decision based on model diagnostics
@@ -134,13 +215,21 @@ http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity
 If based on the assumption tests you decide to drop a predictor variable you should do that here. Create your updated model.
 
 ```{r}
+model_complex_nosaliva <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum , data = df_cleaned)
 
+summary(model_complex_nosaliva)
+
+vifs2 <- vif(model_complex_nosaliva)
+
+vifs2
 ```
 
 #### Checking outliers of the updated model
 
 ```{r}
+plot(model_complex_nosaliva,4)
 
+plot(model_complex_nosaliva, which = 5)
 ```
 
 #### Checking assumptions of the updated model
@@ -148,25 +237,37 @@ If based on the assumption tests you decide to drop a predictor variable you sho
 Normality assumption
 
 ```{r}
+residuals2 <- residuals(model_complex_nosaliva) 
 
+hist(residuals2)
+boxplot(residuals2)
+shapiro.test(residuals2)
 ```
 
 Linearity assumption
 
 ```{r}
+fitted_values2 <- fitted(model_complex_nosaliva)
 
+plot(fitted_values2, residuals2, xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0)
 ```
 
 Homoscedasticty assumption (homogeneity of variance)
 
 ```{r}
+plot(fitted_values2, residuals2, xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0)
 
+bptest(model_complex_nosaliva)
 ```
 
 Multicollinearity assumption
 
 ```{r}
+vifs2 <- vif(model_complex_nosaliva)
 
+vifs2
 ```
 
 ## Model comparison
@@ -174,18 +275,33 @@ Multicollinearity assumption
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
 ```{r}
+model_simple <- lm(pain ~ age + sex, data = df_cleaned)
 
+aic_simple <- AIC(model_simple)
+
+summary(model_simple)
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
 ```{r}
+model_complex_final <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum , data = df_cleaned)
 
+aic_complex <- AIC(model_complex_final)
+
+summary(model_complex_nosaliva)
 ```
 
 Compare the two models.
 
 ```{r}
+lm_test <- anova(model_simple, model_complex_final)
+
+print(aic_simple)
+print(aic2_complex)
+
+
 
 ```
 
+#According to the more complex model where we included predictor factors can more complexly describe the relationship between pain and predictors. Since the aic_simple > aic_complex, and the complex model fits significantly better, we should consider including the measurement of psychological and phisiological factors, especially cortisol and pain catastrophising.
