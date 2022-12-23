@@ -59,10 +59,15 @@ Read the datasets used in this assignment. Pay attention to the extensions of th
 
 ```{r}
 library(haven)
+library(ggpubr)
+library(lme4)
+library(lmerTest)
+library(broom)
+library(MuMIn)
 
-#dataset_A = read_sav(file.choose())
+#dataset_A <- read_sav(file.choose())
 #View(dataset_A)
-#dataset_B = read_sav(file.choose())
+#dataset_B <- read_sav(file.choose())
 #View(dataset_B)
 
 #uncomment to read in files
