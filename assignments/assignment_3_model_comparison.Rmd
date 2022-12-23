@@ -18,9 +18,9 @@ Your first study in this area is related to assessing the influence of trait and
 
 # Procedures and measures
 
-Use the data file called ‘assignment_3_dataset’, from the 'data/' folder.
+Use the data file called â€˜assignment_3_datasetâ€™, from the 'data/' folder.
 
-You have collected data from 160 adults who were scheduled to undergo surgical extraction of the third mandibular molar (wisdom tooth surgery). Patients filled out a form in the waiting room before their surgery. The form contained questions about their sex, age, and weight, and psychological questionnaires assessing anxiety, pain catastrophizing, and mindfulness (see descriptions below). You also got blood samples and saliva samples from participants in the waiting room 5 minutes before their operations to determine the serum (a component of the blood) and salivary cortisol levels of participants. Participants were contacted 5 hours after the surgery to see how much pain they were experiencing. The __level of pain__ at that moment was recorded using a numerical rating scale using a __scale of 0 to 10__, where 0 means “no pain” and 10 means “worst pain I can imagine”. 
+You have collected data from 160 adults who were scheduled to undergo surgical extraction of the third mandibular molar (wisdom tooth surgery). Patients filled out a form in the waiting room before their surgery. The form contained questions about their sex, age, and weight, and psychological questionnaires assessing anxiety, pain catastrophizing, and mindfulness (see descriptions below). You also got blood samples and saliva samples from participants in the waiting room 5 minutes before their operations to determine the serum (a component of the blood) and salivary cortisol levels of participants. Participants were contacted 5 hours after the surgery to see how much pain they were experiencing. The __level of pain__ at that moment was recorded using a numerical rating scale using a __scale of 0 to 10__, where 0 means â€œno painâ€ and 10 means â€œworst pain I can imagineâ€. 
 
 __The State Trait Anxiety Inventory:__ T measures trait anxiety on a scale of 20 to 80, higher scores mean higher anxiety. Anxiety has been found in many studies to positively correlate with the level of pain experienced. This is __variable STAI_trait__ in the dataset.
 
@@ -38,15 +38,15 @@ To answer this research question you will __need to compare two models__ (with a
 
 # What to report
 
-As usual, before you can interpret your model, you will need to run data and model diagnostics. First, check the variables included in the more complex model (age, sex, STAI, pain catastrophizing, mindfulness, and cortisol measures as predictors, and pain as an outcome) for __coding errors__, and the model itself for __influential outliers__ (for example using Cook’s distance). Furthermore, check the final model to see if the __assumptions of linear regression hold true__, that is, __normality__ (of the residuals), __linearity__ (of the relationship), __homogeneity of variance__ (also called homoscedasticity) and that there is no excess __multicollinearity__ (“uncorrelated predictors” in Navarro’s words). If you find anything amiss during these checks, make the appropriate decision or correction and report your findings and actions in your report. 
+As usual, before you can interpret your model, you will need to run data and model diagnostics. First, check the variables included in the more complex model (age, sex, STAI, pain catastrophizing, mindfulness, and cortisol measures as predictors, and pain as an outcome) for __coding errors__, and the model itself for __influential outliers__ (for example using Cookâ€™s distance). Furthermore, check the final model to see if the __assumptions of linear regression hold true__, that is, __normality__ (of the residuals), __linearity__ (of the relationship), __homogeneity of variance__ (also called homoscedasticity) and that there is no excess __multicollinearity__ (â€œuncorrelated predictorsâ€ in Navarroâ€™s words). If you find anything amiss during these checks, make the appropriate decision or correction and report your findings and actions in your report. 
 
 __Note:__ If you do any changes, such as exclude cases, or exclude predictors from the model, you will have to re-run the above checks for your final data and model.
 
 Report the results of the simpler model and the more complex model. For both models you should report the model test statistics (adj.R2, F, df, and p value). Also, report the statistics describing the coefficients of the predictors in a table format (unstandardized regression coefficients and 95% confidence intervals, standardized regression coefficients (B and Beta values), and p values).
 
-Write up the regression equation of the more complex model in the form of 𝑌 = 𝑏0 + 𝑏1 ∗ X1 + 𝑏2 ∗ X2 +…+ bn * Xn, in which you use the actual regression coefficients of your models. (b0 stands for the intercept and b1, b2 … bn stand for the model coefficients for each of the predictors, and X1, X2, … Xn denote the predictors).
+Write up the regression equation of the more complex model in the form of ð‘Œ = ð‘0 + ð‘1 âˆ— X1 + ð‘2 âˆ— X2 +â€¦+ bn * Xn, in which you use the actual regression coefficients of your models. (b0 stands for the intercept and b1, b2 â€¦ bn stand for the model coefficients for each of the predictors, and X1, X2, â€¦ Xn denote the predictors).
 
-Compare the two models in terms of how much variance they explain of pain’s variability in the sample. Report Akaike information criterion (AIC) for both models and the F test statistic and p value of the likelihood ratio test comparing the two models.
+Compare the two models in terms of how much variance they explain of painâ€™s variability in the sample. Report Akaike information criterion (AIC) for both models and the F test statistic and p value of the likelihood ratio test comparing the two models.
 
 # What to discuss
 
@@ -59,7 +59,9 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
-
+library(readxl)
+toothPainPath <- if (file.exists("assignment_3_dataset.xlsx")) { "assignment_3_dataset.xlsx" } else { "https://raw.githubusercontent.com/elte-ppk-r-course/r_data_analysis-22_23_fall/main/data/assignment_3_dataset.xlsx" }
+toothPain <- read_excel(toothPainPath)
 ```
 
 ## Data and model diagnostics 
@@ -69,6 +71,44 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
+str(toothPain)
+glimpse(toothPain)
+
+toothPain %>% map(is.na) %>% map(sum)
+
+ggplot(toothPain, aes(x = pain)) +
+  geom_histogram() +
+  facet_wrap(~ sex)
+
+ggplot(toothPain, aes(x = age, fill = sex)) +
+  geom_histogram() +
+  facet_wrap(~ sex)
+
+ggplot(toothPain, aes(x = STAI_trait)) +
+  geom_histogram() +
+  facet_wrap(~ sex)
+
+ggplot(toothPain, aes(x = pain_cat)) +
+  geom_histogram() +
+  facet_wrap(~ sex)
+
+ggplot(toothPain, aes(x = cortisol_serum, fill = sex)) +
+  geom_density(alpha = .3)
+
+ggplot(toothPain, aes(x = cortisol_saliva, fill = sex)) +
+  geom_density(alpha = .3)
+
+ggplot(toothPain, aes(x = mindfulness, fill = sex)) +
+  geom_density(alpha = .3)
+
+ggplot(toothPain, aes(x = weight, fill = sex)) +
+  geom_density(alpha = .3)
+
+ggplot(toothPain, aes(x = household_income, fill = sex)) +
+  geom_density(alpha = .3)
+
+ggplot(toothPain, aes(x = IQ, fill = sex)) +
+  geom_density(alpha = .3)
 
 ```
 
@@ -77,7 +117,7 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
-
+toothPain$sex[toothPain$sex == "woman"] <- "female"
 ```
 
 ### Model diagnostics
@@ -86,6 +126,11 @@ If you find values in the dataset during the EDA, that are not correct based on 
 In order to test the more complex model for outliers and to test the assumptions first build the model.
 
 ```{r}
+# install.packages("lavaan")
+library(lavaan)
+
+toothPainComplexModel <- lm(pain ~ age+sex+STAI_trait+pain_cat+mindfulness+cortisol_saliva+cortisol_serum, data=toothPain)
+summary(toothPainComplexModel)
 
 ```
 
@@ -94,7 +139,21 @@ In order to test the more complex model for outliers and to test the assumptions
 Check for outlier values in the model.
 
 ```{r}
+plot(toothPainComplexModel)
 
+toothPainFilterOutlier <- toothPain %>% slice(-142)
+
+toothPainFilterOutlierComplexModel <- lm(pain ~ age+sex+STAI_trait+pain_cat+mindfulness+cortisol_serum+cortisol_saliva, data=toothPainFilterOutlier)
+summary(toothPainFilterOutlierComplexModel)
+
+plot(toothPainFilterOutlierComplexModel)
+
+toothPainFilterOutlier2nd <- toothPainFilterOutlier %>% slice(-105,-107,-149)
+
+toothPainFilterOutlier2ndComplexModel <- lm(pain ~ age+sex+STAI_trait+pain_cat+mindfulness+cortisol_serum+cortisol_saliva, data=toothPainFilterOutlier2nd)
+summary(toothPainFilterOutlier2ndComplexModel)
+
+plot(toothPainFilterOutlier2ndComplexModel)
 ```
 
 #### Checking assumptions
@@ -102,19 +161,31 @@ Check for outlier values in the model.
 Check the normality assumption.
 
 ```{r}
+# install.packages("rstatix")
+library(rstatix)
 
+plot(x = toothPainComplexModel, which = 2)
+plot(x = toothPainFilterOutlierComplexModel, which = 2)
+plot(x = toothPainFilterOutlier2ndComplexModel, which = 2)
 ```
 
 Check the linearity assumption.
 
 ```{r}
-
+plot(x = toothPainComplexModel, which = 1)
+plot(x = toothPainFilterOutlierComplexModel, which = 1)
+plot(x = toothPainFilterOutlier2ndComplexModel, which = 1)
 ```
 
 Check the homoscedasticty assumption (homogeneity of variance).
 
 ```{r}
+# install.packages("lmtest")
+library(lmtest)
 
+bptest(toothPainComplexModel, varformula = NULL, studentize = TRUE, data = list(), weights = NULL)
+bptest(toothPainFilterOutlierComplexModel, varformula = NULL, studentize = TRUE, data = list(), weights = NULL)
+bptest(toothPainFilterOutlier2ndComplexModel, varformula = NULL, studentize = TRUE, data = list(), weights = NULL)
 ```
 
 Check the multicollinearity assumption.
@@ -126,7 +197,11 @@ https://statisticalhorizons.com/multicollinearity
 http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity-in-regression-analysis
 
 ```{r}
+library(car)
 
+vif(toothPainComplexModel)
+vif(toothPainFilterOutlierComplexModel)
+vif(toothPainFilterOutlier2ndComplexModel)
 ```
 
 ### Making decision based on model diagnostics
@@ -134,13 +209,14 @@ http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity
 If based on the assumption tests you decide to drop a predictor variable you should do that here. Create your updated model.
 
 ```{r}
-
+toothPainUpdatedComplexModel <- lm(pain ~ age+sex+STAI_trait+pain_cat+mindfulness+cortisol_saliva, data=toothPainFilterOutlier2nd)
+summary(toothPainUpdatedComplexModel)
 ```
 
 #### Checking outliers of the updated model
 
 ```{r}
-
+plot(toothPainUpdatedComplexModel)
 ```
 
 #### Checking assumptions of the updated model
@@ -148,25 +224,25 @@ If based on the assumption tests you decide to drop a predictor variable you sho
 Normality assumption
 
 ```{r}
-
+plot(x = toothPainUpdatedComplexModel, which = 2)
 ```
 
 Linearity assumption
 
 ```{r}
-
+plot(x = toothPainUpdatedComplexModel, which = 1)
 ```
 
 Homoscedasticty assumption (homogeneity of variance)
 
 ```{r}
-
+bptest(toothPainUpdatedComplexModel, varformula = NULL, studentize = TRUE, data = list(), weights = NULL)
 ```
 
 Multicollinearity assumption
 
 ```{r}
-
+vif(toothPainUpdatedComplexModel)
 ```
 
 ## Model comparison
@@ -174,18 +250,31 @@ Multicollinearity assumption
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
 ```{r}
+# install.packages("sjPlot")
+library(sjPlot)
 
+toothPainSimpleModel <- lm(pain ~ age+sex, data=toothPainFilterOutlier2nd)
+summary(toothPainSimpleModel)
+tab_model(toothPainSimpleModel)
+toothPainSimpleAIC <- AIC(toothPainSimpleModel)
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
 ```{r}
-
+tab_model(toothPainUpdatedComplexModel)
+toothPainComplexAIC <- AIC(toothPainUpdatedComplexModel)
+# PAIN = 0.34 + -0.01*age + 0.36*sex + -0.03*STAI_trait + 0.11*pain_cat + -0.12*mindfulness + 0.63*cortisol_saliva
 ```
 
 Compare the two models.
 
 ```{r}
+library(broom)
 
+anova(toothPainSimpleModel, toothPainUpdatedComplexModel)
+# Updated Complex model is better than the Simple model: F(4,149)=20.658, p < 0.001)
+
+glance(toothPainSimpleModel) %>% rbind(glance(toothPainUpdatedComplexModel)) %>% as.data.frame()
+deltaAIC = toothPainSimpleAIC-toothPainComplexAIC
 ```
-
