@@ -1,6 +1,6 @@
 ---
 title: "Assignment 3: Model comparison"
-author: "Marton Kovacs/Zoltan Kekecs"
+author: "Bela Szlovicsak"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -54,11 +54,21 @@ In your discussion of the findings, briefly interpret the results of the above a
 
 # Solution
 
+```{r setuo, include = FALSE}
+library(tidyverse)
+library(readxl)
+library(broom)
+library(car)
+library(QuantPsyc)
+
+```
+
 ## Read the data
 
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
+pain_data <- read_xlsx("~/R_Projects/r_data_analysis-22_23_fall/data/assignment_3_dataset.xlsx")
 
 ```
 
@@ -69,6 +79,35 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
+str(pain_data)
+
+#Exploring outliers with plots and a summary
+
+pain_data %>% 
+  ggplot(aes(
+    age,
+    pain,
+    color = sex
+  )) +
+  geom_point()
+
+#There are coding errors that need to be removed: pain above 10, and unifying woman and female
+
+
+summary(pain_data)
+
+#At least one of the mindfulness scores is above 6, this also needs to be dealt with
+
+ggplot(pain_data,
+       aes(
+         cortisol_serum,
+         cortisol_saliva
+       )) +
+  geom_point()
+
+#The two levels don't differ significantly which is to be expected, but because of this probably on of these variables will be dropped to evade multicollinearity
+
+
 
 ```
 
@@ -77,6 +116,26 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+pain_data2 <- pain_data %>% 
+  filter(pain <= 10) %>% 
+  mutate(sex = str_replace(sex, "woman", "female"),
+         mindfulness = if_else(mindfulness > 6, 6, mindfulness)) 
+
+#Now all values are within the given bounds
+summary(pain_data2)
+unique(pain_data2$sex)
+
+
+#Checking the base model for outliers
+model1 <- lm(pain ~ sex + age, data = pain_data2)
+print(model1)
+
+plot(model1, 5)
+
+
+
+#There seems to be no outliers with a Cook's distance much larger than others. 
+
 
 ```
 
@@ -86,6 +145,11 @@ If you find values in the dataset during the EDA, that are not correct based on 
 In order to test the more complex model for outliers and to test the assumptions first build the model.
 
 ```{r}
+model2 <- lm(pain ~ sex + age + STAI_trait + pain_cat + cortisol_serum + cortisol_saliva + mindfulness, data = pain_data2)
+
+
+summary(model2)
+tidy(model2)
 
 ```
 
@@ -94,6 +158,9 @@ In order to test the more complex model for outliers and to test the assumptions
 Check for outlier values in the model.
 
 ```{r}
+plot(model2, 5)
+
+#Even the highest points are within reason, there are no too influential outliers
 
 ```
 
@@ -102,18 +169,26 @@ Check for outlier values in the model.
 Check the normality assumption.
 
 ```{r}
+plot(model2, 2)
+
+#The points fall along the diagonal, normality can be assumed
 
 ```
 
 Check the linearity assumption.
 
 ```{r}
+plot(model2,1)
 
+#Linearity does not seem to hold, a transformation of some of the explanatory variables is needed
 ```
 
 Check the homoscedasticty assumption (homogeneity of variance).
 
 ```{r}
+plot(model2, 3)
+
+#homoscedasticty does not seem to hold either, the transformation of the response variable might help with this
 
 ```
 
@@ -126,6 +201,9 @@ https://statisticalhorizons.com/multicollinearity
 http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity-in-regression-analysis
 
 ```{r}
+vif(model2)
+
+#As expected the cortisol variables are correlated, cortisol_saliva will be removed first than vif checked again
 
 ```
 
@@ -135,11 +213,20 @@ If based on the assumption tests you decide to drop a predictor variable you sho
 
 ```{r}
 
+model3 <- lm(pain ~ sex
+             + age + STAI_trait + pain_cat + cortisol_serum 
+             + mindfulness, 
+             data = pain_data2)
+
+
 ```
 
-#### Checking outliers of the updated model
+#### Checking outliers of the updated model 
 
 ```{r}
+plot(model3, 5)
+
+#There are no outliers
 
 ```
 
@@ -148,44 +235,82 @@ If based on the assumption tests you decide to drop a predictor variable you sho
 Normality assumption
 
 ```{r}
+plot(model3, 2)
+
+#The residuals are reasonable normal
 
 ```
 
 Linearity assumption
 
 ```{r}
+plot(model3, 1)
+
+#linearity is not perfect, but transformations didn't really help either. It's still better than model2
 
 ```
 
 Homoscedasticty assumption (homogeneity of variance)
 
 ```{r}
+plot(model3, 3)
+
+#it's the same case as it was with linearity
 
 ```
 
 Multicollinearity assumption
 
 ```{r}
+vif(model3)
+
+#Removing cortisol_saliva solved the issue of multicollineartity
 
 ```
 
 ## Model comparison
 
+
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
 ```{r}
+#Model1 was already created
+
+glance(model1)
+
+tidy(model1, conf.int = TRUE, conf.level = 0.95)
+
+
+
 
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
 ```{r}
+#Using model3
+
+glance(model3)
+
+tidy(model3, conf.int = TRUE, conf.level = 0.95)
+
+
 
 ```
+
+The equation of the model:
+Y = -0.97 + 0.20*X1 - 0.12*X2 - 0.04*X3 + 0.27*X4 + 0.35*X5 - 0.09*X6
 
 Compare the two models.
 
 ```{r}
+anova(model1, model3)
 
 ```
+
+Using Anova to compare the two models we can see that there is a significant difference between them. It seems that the more complex model can explain more variance. 
+
+From all the variables only cortisol_saliva was removed, but the data is still not entirly linear no heteroscadistic, which is not helped by using transformations on the variables either. Using a more complex, mixed effect model might help. 
+
+
 
