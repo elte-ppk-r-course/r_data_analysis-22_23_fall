@@ -225,12 +225,40 @@ aic_simple <- AIC(simple_model)
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
 ```{r}
-
+example <- tibble(age=40, sex="male")
+predict(simple_model, example)
 ```
 
-Compare the two models.
+
 
 ```{r}
+complex_model2 <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data=pain_experience)
+summary(complex_model2)
+tab_model(complex_model2)
+```
 
+
+```{r}
+#my model explained 32 % of the variability of experienced pain. **adj R2 = 0.32**. Two of my predictors came out significant, pain catastrophizing (p = 0.003), and cortisol serum (p < 0.001)
+
+#the more complex model seems more accurate to predict pain (simple model adj R2 was 0.076)
+
+#the complex model was overall significant (F(6,151)=13.33, p < 0.001), but age does not come out significantly important here (p = 0.139)
+
+#the equation of the more complex model is:
+
+#Y = 1.99957 + -0.03488 * x1 +  0.30051 * x2 + -0.01229 * x3 + 0.08487 * x4 + -0.14827 * x5 + 0.53193 * x6
+```
+
+```{r}
+compare <- anova(simple_model, complex_model2)
+compare
+#comparison
+
+#the complex model is significantly better, than the simple one (F(4)=15.221, p < 0.001)
+
+#the  likelihood ratio test also suggest to use the complex model, X^2(4) = 53.523, p < 0.001
+
+#the more complex model predicts outcome (pain) with higher efficiency, changes adj R2 from 0.076 to 0.32, explaining 24,4 % more variance of outcome variable. Still not all predictors seem to be significant, so it would be more efficient to include less predictors in the model.
 ```
 
