@@ -58,6 +58,14 @@ Compare the model coefficients and the confidence intervals observed in this ass
 Read the datasets used in this assignment. Pay attention to the extensions of the datafiles.
 
 ```{r}
+library(haven)
+
+#dataset_A = read_sav(file.choose())
+#View(dataset_A)
+#dataset_B = read_sav(file.choose())
+#View(dataset_B)
+
+#uncomment to read in files
 
 ```
 
@@ -66,7 +74,73 @@ Read the datasets used in this assignment. Pay attention to the extensions of th
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
+dataset_A %>%
+  summary()
 
+
+#using ggplot to find outliers and check normality
+ggplot(dataset_A, aes(age, pain)) +
+  geom_point()
+ggdensity(dataset_A$age, xlab = "normality of age")
+ggdensity(dataset_A$pain, xlab = "normality of pain")
+```
+
+```{r}
+ggplot(dataset_A, aes(age, IQ)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+ggdensity(dataset_A$IQ, xlab = "normality of IQ")
+```
+
+```{r}
+ggplot(dataset_A, aes(age, weight)) +
+  geom_point()
+ggdensity(dataset_A$weight, xlab = "normality of weight")
+```
+
+```{r}
+ggplot(dataset_A, aes(age, household_income)) +
+  geom_point()
+ggdensity(dataset_A$household_income, xlab = "normality of household income")
+```
+
+```{r}
+is.factor(dataset_A$sex)
+dataset_A <- 
+  dataset_A %>%
+  mutate(sex = as.factor(sex))
+levels(dataset_A$sex)
+```
+
+```{r}
+ggplot(dataset_B, aes(age, pain)) +
+  geom_point()
+ggdensity(dataset_B$pain, xlab = "normality of pain")
+ggdensity(dataset_B$age, xlab = "normality of age")
+```
+
+```{r}
+ggplot(dataset_B, aes(age, IQ)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+ggdensity(dataset_B$IQ, xlab = "normality of IQ")
+```
+
+```{r}
+ggplot(dataset_B, aes(age, weight)) +
+  geom_point()
+ggdensity(dataset_B$weight, xlab = "normality of weight")
+```
+
+```{r}
+ggplot(dataset_B, aes(age, household_income)) +
+  geom_point()
+ggdensity(dataset_B$household_income, xlab = "normality of household income")
+```
+
+```{r}
+dataset_B <- dataset_B %>%
+  mutate(sex = as.factor(sex))
 ```
 
 ## Correct coding errors
@@ -74,6 +148,82 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+dataset_A <- dataset_A %>%
+   mutate(sex = replace(sex, sex == "Male", "male")) %>%
+  filter(weight > 40)
 
+#no signif problem with B data
+```
+
+##model
+
+```{r}
+model_A <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data = dataset_A)
+check_model(model_A)
+summary(model_A)
+```
+
+```{r}
+
+model_A %>%
+  augment() %>%
+  arrange(desc(.cooksd)) %>%
+  head()
+
+
+r.squaredGLMM(model_A)
+
+#model_A is a significant model (F(6,192)=17.74, p = 0.004), with significant variables age (p < 0.001), sex (p = 0.039), mindfulness (p = 0.012) and cortisol serum (p < 0.001)
+```
+
+```{r}
+mixed_model_A <- lmer(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + (1 | hospital), data = dataset_A)
+check_model(mixed_model_A)
+
+#random effect of hospitals
+```
+
+
+```{r}
+summary(model_A)
+confint(model_A)
+summary(mixed_model_A)
+confint(mixed_model_A)
+
+
+r.squaredGLMM(mixed_model_A)
+
+#the marginal R^2 is 0.316, meaning the variance explained by the fixed factors of the model is 31.6%.
+
+#the conditional R^2 is 0.435, meaning the variance explained by the model containing fixed and random effects is higher, 43.5%.
+
+#to run my model on the data in dataset B, I made sure that the variables are named the same.
+
+#I predicted values in B using the mixed model I have gotten from dataset A
+```
+
+```{r}
+comparison <- anova(mixed_model_A, model_A)
+comparison
+
+#the complex mixed model is a significantly better choice (p < 0.001)**
+```
+
+```{r}
+predict_on_B <- predict(mixed_model_A, dataset_B, allow.new.levels = TRUE)
+predict_on_B
+
+predict(mixed_model_A,dataset_B, allow.new.levels = TRUE) - dataset_B$pain
+sum(predict_on_B^2)
+```
+
+```{r}
+glance(model_A, dataset_B)
+
+#the fitted fixed effect model on database A predicts 33.7% of the pain's variance in dataset B (adj R^2 = 0.337).
+
+#Compared to the modelA fitted on dataset A it seems to be lower than both the marginal (0.35), and the conditional (0.35).
+
+#it suggest that model_A predicts better on dataset A than on dataset B
 ```
 
