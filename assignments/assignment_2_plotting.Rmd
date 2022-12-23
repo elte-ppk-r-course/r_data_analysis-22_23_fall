@@ -94,11 +94,11 @@ tt_phd <- tt_phd$phd_by_field
 ```{r}
 library(scales)
 
-phd_plot = tt_phd %>% 
+phd_plot <- tt_phd %>% 
     group_by(year, broad_field) %>%
     summarise(doctors = sum(n_phds, na.rm = TRUE))
 
-plot2 = ggplot(phd_plot, aes(x = year, y = doctors, colour = broad_field)) +
+plot2 <- ggplot(phd_plot, aes(x = year, y = doctors, colour = broad_field)) +
         geom_line(size = 1.2)+
         ggtitle("Number of awarded Ph.D.-s in the US by year") +
         xlab("") +
@@ -124,4 +124,22 @@ Notes:
 tt_commute <- tt_load("2019-11-05")
 tt_commute <- tt_commute$commute
 
+```
+
+```{r}
+commute_plot <- tt_commute %>%
+  group_by(state_abb, mode, state_region) %>%
+  summarise(commuters = sum(n)) %>%
+  pivot_wider(names_from = mode, values_from = commuters)
+
+plot3 <- ggplot(commute_plot, aes(x = Walk, y = Bike, colour = state_region, label = state_abb)) + 
+      geom_point(size = 2) +
+      geom_text(colour = "black") +
+      scale_x_log10(labels = comma_format(scale = 1)) +
+      scale_y_log10(labels = comma_format(scale = 1), limits = c(25, NA)) +
+      ggtitle("Title number of people walking vs. biking to work in each USA state") +
+      labs(colour = "State region") + 
+      xlab("Number of ppl biking to work (log N)") +
+      ylab("Number of ppl walking to work (log N)") +
+      theme_light()
 ```
