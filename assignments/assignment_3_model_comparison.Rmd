@@ -72,7 +72,7 @@ library(sjlabelled)
 library(lmtest)
 library(ggpubr)
 
-pain_exp <- read_excel(file.choose())
+pain_experience <- read_excel(file.choose())
 ```
 
 ## Data and model diagnostics 
