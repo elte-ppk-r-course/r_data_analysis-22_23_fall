@@ -1,0 +1,66 @@
+/* Fancy RMarkdown CSS */
+
+/* Set the background color of the document */
+body {
+  background-color: #f8f9fa;
+}
+
+/* Set the font and font size for the document */
+body {
+  font-family: 'Helvetica Neue', sans-serif;
+  font-size: 14pt;
+}
+
+/* Set the style for headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Georgia', serif;
+  font-weight: bold;
+  color: #343a40;
+}
+
+/* Set the style for links */
+a {
+  color: #0275d8;
+  text-decoration: none;
+  border-bottom: 1px solid #0275d8;
+}
+
+a:hover {
+  color: #014c8c;
+  border-bottom: 1px solid #014c8c;
+}
+
+/* Set the style for blockquotes */
+blockquote {
+  border-left: 5px solid #6c757d;
+  padding: 1em;
+  color: #6c757d;
+}
+
+/* Set the style for code blocks */
+pre {
+  background-color: #f7f7f9;
+  border: 1px solid #e1e1e8;
+  border-radius: 3px;
+  padding: 16px;
+}
+
+code {
+  font-family: 'Fira Code', monospace;
+  font-size: 14pt;
+}
+
+/* Set the style for tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}

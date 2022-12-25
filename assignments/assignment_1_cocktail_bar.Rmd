@@ -32,7 +32,7 @@ Note: There are several different ways to solve these tasks, feel free to come u
 Read the cocktail dataset from: <https://github.com/nthun/cocktail-balance> You can also find the codebook there.
 
 ```{r}
-
+coctail_balance_raw <- read_tsv("https://raw.githubusercontent.com/nthun/cocktail-balance/master/cocktail_data.tsv")
 ```
 
 ## 2. Transform the data table and clean the ingredient variable!
@@ -40,7 +40,19 @@ Read the cocktail dataset from: <https://github.com/nthun/cocktail-balance> You 
 The ingredients are currently in a single cell for each cocktail. It would be better to put them in separate rows. Also, the variable should be cleaned of all quantities (e.g. 1/2 oz, 2 dashes, etc.), and the indicator of alcohol content (e.g. 47.3% abv). You will need to use this cleaned table in later tasks.
 
 ```{r}
+coctail_balance_clean <- coctail_balance_raw %>%
+  separate_rows(ingredients, sep = "<br/>") %>% #separating rows by a given string in the character vector
+  separate_rows(ingredients, sep = "<br>") %>%
+  separate_rows(ingredients, sep = "<b/>") #this seems to be wrong at row 94
 
+coctail_balance_clean$ingredients <- str_replace_all(coctail_balance_clean$ingredients, pattern = "\\b\\d+[%/\\d]*\\s*(?:oz|dash|fl[\\s.]?oz|abv)\\b", replacement = "")
+coctail_balance_clean$ingredients <- str_replace_all(coctail_balance_clean$ingredients, pattern = "[:digit:]", replacement = "")
+coctail_balance_clean$ingredients <- str_replace_all(coctail_balance_clean$ingredients, pattern = "\\.", replacement = "")
+coctail_balance_clean$ingredients <- str_replace_all(coctail_balance_clean$ingredients, pattern = "\\(\\)", replacement = "")
+coctail_balance_clean$ingredients <- str_trim(coctail_balance_clean$ingredients)
+
+#this was an extremely redundant call of regex functions but this is the best i can do for now with regex
+#also i had a hard time using the %>% operator with stringr so I stayed with the base R option with the $ operator
 ```
 
 ## 3. All ingredients in alphabetical order
@@ -48,7 +60,7 @@ The ingredients are currently in a single cell for each cocktail. It would be be
 Before opening the bar, you need to find a reliable supplier that has all the ingredients. You need to send a list of all possible ingredients you will need. They don't need the quantities (i.e. how many of these are needed), just the names of the ingredients.
 
 ```{r}
-
+ingredients_names <- sort(tolower(unique(coctail_balance_clean$ingredients)))
 ```
 
 ## 4. Number of unique ingredients
@@ -56,7 +68,7 @@ Before opening the bar, you need to find a reliable supplier that has all the in
 How many different ingredients you will need?
 
 ```{r}
-
+number_of_ingredients <- length(ingredients_names) - 1 # i subtract one because of the unique 45th element of vector is wrong
 ```
 
 ## 5. What are the top 10 ingredients?
@@ -64,7 +76,9 @@ How many different ingredients you will need?
 What are the 10 most frequently used ingredients? If there are ties, you can list more than 10.
 
 ```{r}
-
+top10_ing <- coctail_balance_clean %>%
+  count(ingredients, sort = TRUE) %>%
+  top_n(10, wt = n)
 ```
 
 ## 6. Which cocktail(s) has/have the most ingredients?
@@ -72,7 +86,8 @@ What are the 10 most frequently used ingredients? If there are ties, you can lis
 Count the number of ingredients and filter all the cocktails that has that many.
 
 ```{r}
-
+top_coctails <- coctail_balance_clean %>%
+  count(name, sort = TRUE) # this works since the dataset was longered by ingredients
 ```
 
 ## 7. How many ingredients appear in only one cocktail (rare ingredient)?
@@ -80,19 +95,34 @@ Count the number of ingredients and filter all the cocktails that has that many.
 Count all cocktails with only one ingredient, and
 
 ```{r}
+rare_ing <- coctail_balance_clean %>%
+  count(ingredients, sort = TRUE) %>%
+  filter(n == 1)
 
+n_rare_ing <- length(rare_ing$ingredients)
+print(n_rare_ing)
 ```
 
 ## 8. Which cocktail has an ingredient that is only used in one cocktail?
 
 ```{r}
-
+coctails_with_rare <- coctail_balance_clean %>%
+  filter(ingredients %in% rare_ing$ingredients) %>%
+  select(name) %>%
+  unique()
 ```
 
 ## 9. What are the cocktails without rare ingredients?
 
 ```{r}
-  
+'%ni%' <- Negate("%in%")
+
+coctails <- coctail_balance_clean %>%
+  select(name)%>%
+  unique()
+
+common_coctails <- filter(coctails, name %ni% coctails_with_rare$name)
+
 ```
 
 ## 10. Create a cheat sheet for the bartender!
@@ -108,6 +138,22 @@ tribble(~name, ~Lime, ~`White rum`, ~`Cane sugar`, ~`Coca-cola`, ~Mint, ~Soda,
 ```
 
 ```{r}
+ingredient_matrix <- matrix("", length(ingredients_names), length(coctails$name))
+
+colnames(ingredient_matrix) = coctails$name
+rownames(ingredient_matrix) = ingredients_names
+
+colnames(ingredient_matrix) <- matrixcoloumns
+rownames(ingredient_matrix) <- matrixrows
+
+xer <- function() {
+  ifelse(str_detect(ingredients_names, pattern = matrixcoloumns), ingredient_matrix[] <- "X", "")
+}
+
+apply(ingredient_matrix,c(1,2), xer)
+
+#i don't know how to select to proper matrix indeces but the ide would be to at each element in the matrix check the logical value of "is the coloumn name present in the list of ingredients?" if yes, put an "X", if no, put an ""
+
 
 ```
 

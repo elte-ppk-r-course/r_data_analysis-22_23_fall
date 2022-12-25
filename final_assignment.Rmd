@@ -1,0 +1,136 @@
+---
+title: "Student Debt"
+author: "Marton Aron Varga"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   html_document:
+    toc: false
+    css: final.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE)
+
+#loading packages
+library(tidyverse)
+```
+
+
+
+```{r}
+
+# Or read in the data manually
+
+lifetime_earn <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/lifetime_earn.csv')
+student_debt <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/student_debt.csv')
+retirement <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/retirement.csv')
+home_owner <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/home_owner.csv')
+race_wealth <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/race_wealth.csv')
+income_time <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_time.csv')
+income_limits <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_limits.csv')
+income_aggregate <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_aggregate.csv')
+income_distribution <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_distribution.csv')
+income_mean <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-09/income_mean.csv')
+
+
+```
+
+# Introduction
+In this analysis, we will be exploring the student debt data from the Tidy Tuesday project. This data includes information on the median debt of students at different colleges and universities in the United States. Our goal is to understand patterns and trends in the data and to identify factors that may be related to higher levels of student debt.
+
+# Exploratory Data Analysis
+
+```{r}
+student_debt %>%
+  ggplot(aes(year, loan_debt_pct, color = race)) +
+  geom_point(size = 2.5, alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = NULL, y = "% of families with student loan debt", color = NULL)
+```
+Observe that the percentage of families with students has been substantially increasing, although at varying rates for various racial/ethnic groups.
+
+# Model
+
+```{r}
+library(tidymodels)
+
+lm_spec <-
+  linear_reg() %>%
+  set_engine("lm")
+
+#Let’s fit that model to our data, using an interaction to account for how the rates/slopes have been 
+#hanging at different, well, rates for the different groups.
+
+lm_fit <-
+  lm_spec %>%
+  fit(loan_debt_pct ~ year * race, data = student_debt)
+
+lm_fit
+```
+
+```{r}
+tidy(lm_fit)
+```
+
+```{r}
+new_points <- crossing(
+  race = c("Black", "Hispanic", "White"),
+  year = 1990:2020
+)
+
+new_points
+```
+
+```{r}
+augment(lm_fit, new_data = new_points) %>%
+  ggplot(aes(year, .pred, color = race)) +
+  geom_line(size = 1.2, alpha = 0.7) +
+  labs(x = NULL, y = "% of families with student loan debt", color = NULL)
+```
+# Machine learning model
+ 
+```{r}
+library(caret)
+
+set.seed(123)
+split <- createDataPartition(student_debt$race, p = 0.8, list = FALSE)
+train_df <- student_debt[split, ]
+test_df <- student_debt[-split, ]
+
+model <- train(loan_debt ~ race, data = train_df, method = "lm")
+# Make predictions on test data
+predictions <- predict(model, test_df)
+
+
+# Evaluate model performance
+metrics <- postResample(predictions, test_df$loan_debt)
+print(metrics)
+
+
+```
+ 
+ The root mean squared error (RMSE), R squared, and mean absolute error (MAE) are all measures of the performance of a machine learning model.
+
+The RMSE is a measure of the difference between the predicted values and the actual values. It is calculated as the square root of the mean squared error, which is the average of the squared differences between the predicted values and the actual values. A lower RMSE indicates a better fit of the model to the data.
+
+The R squared, also known as the coefficient of determination, is a measure of how well the model explains the variance in the response variable. It is calculated as the proportion of the variance in the response variable that is explained by the model. A higher R squared indicates a better fit of the model to the data.
+
+The MAE is a measure of the average magnitude of the errors in the predictions. It is calculated as the average of the absolute differences between the predicted values and the actual values. A lower MAE indicates a better fit of the model to the data.
+
+In the case of the RMSE, R squared, and MAE values provided here, the model appears to have a very good fit to the data, as the values are relatively low.
+
+In this model we have predicted loan debt by race. According to the Rsquared race approx. defines 57% of the loan's variance which is a lot!
+
+```{r}
+
+# Create scatterplot of predictions vs. actual values
+ggplot(test_df, aes(x = race, y = predictions)) +
+  geom_point() +
+  geom_abline()
+
+```
+
+```{r}
+
+```
+

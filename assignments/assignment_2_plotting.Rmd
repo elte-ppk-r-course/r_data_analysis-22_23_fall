@@ -20,6 +20,7 @@ You will have to create 3 plots based on the datasets and instructions detailed 
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(tidytuesdayR)
+library(viridis)
 ```
 
 ## Task 1: Climbing expeditions
@@ -31,6 +32,47 @@ The 2020-09-22 TidyTueday datasets are about climbing expeditions. From the thre
 -   The bar colors use the viridis palette and light theme.
 
 ```{r}
+tt_expedition <- tt_load("2020-09-22")
+tt_expedition <- tt_expedition$expeditions
+```
+
+
+```{r}
+
+#tt_expedition$season <- as_factor(tt_expedition$season)
+#tt_expedition$peak_name <- as_factor(tt_expedition$peak_name)
+
+max15_peak <- tt_expedition %>%
+    group_by(season) %>%
+     count(peak_name) %>%
+     arrange(desc(n))
+
+max15_peak$peak_name <- fct_lump(max15_peak$peak_name, 15)
+max15_peak$peak_name <- fct_reorder(max15_peak$peak_name, max15_peak$n, sum)
+
+max15_peak <- max15_peak %>%
+  filter(peak_name != "Other")
+
+
+plot1 <- max15_peak %>%
+  ggplot() + 
+  aes(x = peak_name, y = n, fill = season) +
+  geom_bar(stat = "identity") + 
+  scale_fill_viridis() +
+  ggtitle("The 15 most popular peaks stacked by season of expedition") + 
+  ylab("") +
+  xlab("Number of expeditions") +
+  guides(fill=guide_legend(title="season")) +
+  theme(legend.position = "bottom") +
+  theme_light() +
+  scale_y_continuous() +
+  scale_x_discrete() +
+  coord_flp
+
+#i can't understant the error here, i assume it's because of the factor and identity statistics mess up 
+#but i couldn't resolve this anyhow with the scales or ordering or even transfroming to characters
+
+#Error: Discrete value supplied to continuous scale
 
 ```
 
@@ -45,7 +87,27 @@ Notes:
 -   The line size is 1.2, the colors are from the brewer "Dark2" palette. The theme is set to minimal.
 
 ```{r}
+tt_phd <- tt_load("2019-02-19")
+tt_phd <- tt_phd$phd_by_field
+```
 
+```{r}
+library(scales)
+
+phd_plot <- tt_phd %>% 
+    group_by(year, broad_field) %>%
+    summarise(doctors = sum(n_phds, na.rm = TRUE))
+
+plot2 <- ggplot(phd_plot, aes(x = year, y = doctors, colour = broad_field)) +
+        geom_line(size = 1.2)+
+        ggtitle("Number of awarded Ph.D.-s in the US by year") +
+        xlab("") +
+        ylab("") +
+        labs(colour = "Broad field") +
+        scale_y_continuous(labels = comma_format(scale = 1)) +
+        scale_x_continuous(breaks = pretty_breaks(5)) +
+        scale_colour_brewer(palette = "Dark2") +
+        theme_minimal()
 ```
 
 ## Task 3: Commute in the US
@@ -59,5 +121,25 @@ Notes:
 -   The point size is 2, . The theme is set to light.
 
 ```{r}
+tt_commute <- tt_load("2019-11-05")
+tt_commute <- tt_commute$commute
 
+```
+
+```{r}
+commute_plot <- tt_commute %>%
+  group_by(state_abb, mode, state_region) %>%
+  summarise(commuters = sum(n)) %>%
+  pivot_wider(names_from = mode, values_from = commuters)
+
+plot3 <- ggplot(commute_plot, aes(x = Walk, y = Bike, colour = state_region, label = state_abb)) + 
+      geom_point(size = 2) +
+      geom_text(colour = "black") +
+      scale_x_log10(labels = comma_format(scale = 1)) +
+      scale_y_log10(labels = comma_format(scale = 1), limits = c(25, NA)) +
+      ggtitle("Title number of people walking vs. biking to work in each USA state") +
+      labs(colour = "State region") + 
+      xlab("Number of ppl biking to work (log N)") +
+      ylab("Number of ppl walking to work (log N)") +
+      theme_light()
 ```

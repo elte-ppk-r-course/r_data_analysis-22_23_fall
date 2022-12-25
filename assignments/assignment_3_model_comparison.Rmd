@@ -59,7 +59,20 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
+library(readxl)
+library(openxlsx)
+library(tidyverse)
+library(performance)
+library(see)
+library(patchwork)
+library(broom)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(lmtest)
+library(ggpubr)
 
+pain_experience <- read_excel(file.choose())
 ```
 
 ## Data and model diagnostics 
@@ -69,7 +82,48 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
+pain_experience %>%
+  summary()
+```
 
+```{r}
+ggplot(pain_experience, aes(age, pain)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+ggplot(pain_experience, aes(age, IQ)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+ggplot(pain_experience, aes(age, weight)) +
+  geom_point()
+```
+
+```{r}
+is.factor(pain_experience$sex)
+as.factor(pain_experience$sex)
+```
+
+```{r}
+ggdensity(pain_experience$IQ, xlab = "normality of IQ")
+
+#seems wrong
+```
+
+```{r}
+ggdensity(pain_experience$pain, xlab = "normality of pain")
+```
+
+```{r}
+ggdensity(pain_experience$household_income, xlab = "normality of household income")
+```
+
+```{r}
+ggdensity(pain_experience$age, xlab = "normality of age")
 ```
 
 #### Correct coding errors
@@ -77,7 +131,16 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+pain_experience <- pain_experience %>%
+  mutate(sex = replace(sex, sex == "woman", "female")) %>%
+  filter (pain < 11) %>%
+  filter (weight > 40)
+pain_experience %>%
+  summary()
+```
 
+```{r}
+ggdensity(pain_experience$pain, xlab = "normality of pain - filtered")
 ```
 
 ### Model diagnostics
@@ -86,61 +149,46 @@ If you find values in the dataset during the EDA, that are not correct based on 
 In order to test the more complex model for outliers and to test the assumptions first build the model.
 
 ```{r}
-
+complex_model <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + cortisol_saliva, data=pain_experience)
+summary(complex_model)
 ```
+
 
 #### Checking for influential outliers
 
 Check for outlier values in the model.
 
 ```{r}
-
+complex_model %>%
+  augment() %>%
+  arrange(desc(.cooksd)) %>%
+  head()
 ```
 
 #### Checking assumptions
-
-Check the normality assumption.
-
 ```{r}
-
+#done in one go
 ```
 
-Check the linearity assumption.
-
-```{r}
-
-```
-
-Check the homoscedasticty assumption (homogeneity of variance).
-
-```{r}
-
-```
-
-Check the multicollinearity assumption.
-
-(VIF above 5), or a VIF threshold of 3 is recommended in this paper: http://onlinelibrary.wiley.com/doi/10.1111/j.2041-210X.2009.00001.x/full
-
-Some info about VIF: 
-https://statisticalhorizons.com/multicollinearity
-http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity-in-regression-analysis
-
-```{r}
-
-```
 
 ### Making decision based on model diagnostics
 
 If based on the assumption tests you decide to drop a predictor variable you should do that here. Create your updated model.
 
 ```{r}
-
+complex_model2 <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data=pain_experience)
+summary(complex_model2)
+aic_complex <- AIC(complex_model2)
+aic_complex
+tab_model(complex_model2)
 ```
 
 #### Checking outliers of the updated model
 
 ```{r}
-
+complex_model2 %>%
+  augment() %>%
+  arrange(desc(.cooksd))
 ```
 
 #### Checking assumptions of the updated model
@@ -148,44 +196,69 @@ If based on the assumption tests you decide to drop a predictor variable you sho
 Normality assumption
 
 ```{r}
-
+check_model(complex_model2)
+#the updated complex model is overall significant (F(6,151) = 13.33, p < 0.001, AIC = 528.673), with significant predictor variables like pan catastrophizing (p = 0.003) and cortisol serum (p < 0.001).
 ```
 
-Linearity assumption
 
-```{r}
-
-```
-
-Homoscedasticty assumption (homogeneity of variance)
-
-```{r}
-
-```
-
-Multicollinearity assumption
-
-```{r}
-
-```
 
 ## Model comparison
 
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
 ```{r}
+simple_model <- lm(pain ~ age + sex, data = pain_experience)
+simple_model
+tab_model(simple_model)
+aic_simple <- AIC(simple_model)
 
+#age is a significant main effect (p0.001) but not gender in our model, which is significant (F(2,156) = 7.511, p 0.001, AIC = 574.196).
+
+#the dependent variable's explained variance is **adj R2 = 0.07614**, or 7,6%, which is lower than we would like it to be in the more sophisticated model.
+
+
+#age's confidence interval is [-0.13, -0.04], which excludes zero, but sex's confidence interval is [-0.35, 0.56], which includes zero.
+
+#Y = 8.49145 + -0.08906 * x1 + 0.10287 * x2 is the regression equation.
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
 ```{r}
-
+example <- tibble(age=40, sex="male")
+predict(simple_model, example)
 ```
 
-Compare the two models.
+
 
 ```{r}
+complex_model2 <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data=pain_experience)
+summary(complex_model2)
+tab_model(complex_model2)
+```
 
+
+```{r}
+#my model explained 32 % of the variability of experienced pain. **adj R2 = 0.32**. Two of my predictors came out significant, pain catastrophizing (p = 0.003), and cortisol serum (p < 0.001)
+
+#the more complex model seems more accurate to predict pain (simple model adj R2 was 0.076)
+
+#the complex model was overall significant (F(6,151)=13.33, p < 0.001), but age does not come out significantly important here (p = 0.139)
+
+#the equation of the more complex model is:
+
+#Y = 1.99957 + -0.03488 * x1 +  0.30051 * x2 + -0.01229 * x3 + 0.08487 * x4 + -0.14827 * x5 + 0.53193 * x6
+```
+
+```{r}
+compare <- anova(simple_model, complex_model2)
+compare
+#comparison
+
+#the complex model is significantly better, than the simple one (F(4)=15.221, p < 0.001)
+
+#the  likelihood ratio test also suggest to use the complex model, X^2(4) = 53.523, p < 0.001
+
+#the more complex model predicts outcome (pain) with higher efficiency, changes adj R2 from 0.076 to 0.32, explaining 24,4 % more variance of outcome variable. Still not all predictors seem to be significant, so it would be more efficient to include less predictors in the model.
 ```
 
