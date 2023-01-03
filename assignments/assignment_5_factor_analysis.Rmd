@@ -21,7 +21,7 @@ You can load the dataset from the 'data/' folder.
 
 The dataset includes the responses of 154 individuals on the following variables:
 
-__ar1-ar28__ contain the data from the 28 items of the ARS. Participants had to rate their agreement with each statement separately on a 1-5 Likert scale with the following anchors: 1 - strongly disagree, 2 – disagree, 3 - no opinion, 4 – agree, 5 - strongly agree.
+__ar1-ar28__ contain the data from the 28 items of the ARS. Participants had to rate their agreement with each statement separately on a 1-5 Likert scale with the following anchors: 1 - strongly disagree, 2 â€“ disagree, 3 - no opinion, 4 â€“ agree, 5 - strongly agree.
 
 The questions in the ARS were the following:
 
@@ -58,15 +58,15 @@ You can get more information about the ARS here: http://core.ecu.edu/psyc/wuensc
 
 And also here: 
 
-Wuensch, K. L., Jenkins, K. W., & Poteat, G. M. (2002). Misanthropy, idealism, and attitudes towards animals. _Anthrozoös, 15_, 139-149
+Wuensch, K. L., Jenkins, K. W., & Poteat, G. M. (2002). Misanthropy, idealism, and attitudes towards animals. _AnthrozoÃ¶s, 15_, 139-149
 
 Sharp, H. W., Wuensch, K. L., Eppler, M. A., & Harju, B. L. (2006, April). Narcissism, empathy, and attitudes towards animals. In _Spring Conference of the North Carolina Psychological Association and North Carolina Psychological Foundation, Charlotte, NC._
 
 A few other questions were also included in the questionnaire:
 
-__sex:__ The self reported sex of the participant. This is a categorical variable coded as 1 – female, 2 – male.
+__sex:__ The self reported sex of the participant. This is a categorical variable coded as 1 â€“ female, 2 â€“ male.
 
-__party:__ Self reported party affiliation of the person (in the USA). This is a categorical variable coded as 1 - democrat, 2 - republican, 3 - other, 4 – none.
+__party:__ Self reported party affiliation of the person (in the USA). This is a categorical variable coded as 1 - democrat, 2 - republican, 3 - other, 4 â€“ none.
 
 __liberal:__ This variable contains data from a question: please rate how conservative or liberal are you. On a scale of 1-5 where 1 means very conservative and 5 means very liberal. 
 
@@ -76,7 +76,7 @@ Your task is to do an exploratory factor analysis using the items in the ARS to 
 
 _(The factor structure of this scale has been previously analyzed by others. If you want, you can use these previous research reports to guide your exploration, or you can ignore them. In any case, do not base your decisions solely on these research reports. Do your own work and base your decisions on your own findings on this dataset.)_
 
-When you have arrived at the factor structure you consider final, give names to the factors you derived from the data. Save the factor scores and build a linear regression model to predict how conservative or liberal participants are (using the “liberal” variable as a dependent variable) with the factors you identified as the predictors.
+When you have arrived at the factor structure you consider final, give names to the factors you derived from the data. Save the factor scores and build a linear regression model to predict how conservative or liberal participants are (using the â€œliberalâ€ variable as a dependent variable) with the factors you identified as the predictors.
 
 __To simplify the task you can regard all likert scale variables (ar1-28 and liberal) as if they were continuous variables!__ So you do not have to use polychoric correlation for factor analysis and you do not have to perform ordinal regression.
 
@@ -103,13 +103,21 @@ Talk about the limitations of your study and findings.
 Read the Animal Rights Scale (ARQ) dataset from the 'data/' folder. Pay attention to the extension.
 
 ```{r}
-
+animalRightsScalePath <- if (file.exists("./data/assignment_5_dataset.csv")) { "./data/assignment_5_dataset.csv" } else { "https://raw.githubusercontent.com/elte-ppk-r-course/r_data_analysis-22_23_fall/main/data/../data/assignment_5_dataset.csv" }
+animalRightsScale <- read_csv(animalRightsScalePath)
 ```
 
 ## EDA
 
 ```{r}
+# install.packages("pastecs")
+# install.packages("psych")
+library(pastecs)
+library(psych)
 
+dim(animalRightsScale)
+stat.desc(animalRightsScale)
+describe(animalRightsScale)
 ```
 
 ## Data manipulation
@@ -119,7 +127,9 @@ Recode the sex and party variables as factor type variables with the following l
   * party: 1 - democrat, 2 - republican, 3 - other, 4 - none
 
 ```{r}
-
+animalRightsScale <- animalRightsScale %>%
+  mutate(sex = recode_factor(sex, "1" = "male", "2" = "female")) %>%
+  mutate(party = recode_factor(party, "1" = "democrat", "2" = "republican", "3" = "other", "4" = "none"))
 ```
 
 # Creating a correlation matrix
@@ -127,13 +137,16 @@ Recode the sex and party variables as factor type variables with the following l
 __Note:__ Remember to only include the variables of the questionnaire that will be part of the factor analysis.
 
 ```{r}
-
+animalRightsScaleItems <- animalRightsScale %>% select(matches("ar[0-9]+"))
 ```
 
 Create the correlation matrix.
 
 ```{r}
+# install.packages("corrr")
+library(corrr)
 
+correlationMatrix <- correlate(animalRightsScaleItems)
 ```
 
 ## Visualizing the correlation matrix
@@ -141,7 +154,7 @@ Create the correlation matrix.
 Create a visualization of the results of the correlation matrix.
 
 ```{r}
-
+rplot(correlationMatrix, print_cor = TRUE)
 ```
 
 ## Test for factorability
@@ -149,19 +162,25 @@ Create a visualization of the results of the correlation matrix.
 Calculate the KMO score.
 
 ```{r}
-
+KMO(animalRightsScaleItems)
 ```
 
 ## Test for multivariate normality
 
 ```{r}
-
+# install.packages("mvnTest")
+library(mvnTest)
+HZ.test(na.omit(animalRightsScaleItems))
 ```
 
 Test for skewness and kurtosis.
 
 ```{r}
+# install.packages("moments")
+library(moments)
 
+skewness(animalRightsScaleItems)
+kurtosis(animalRightsScaleItems)
 ```
 
 ## Create scree plot
@@ -169,6 +188,12 @@ Test for skewness and kurtosis.
 Create a scree plot to help the decision on how many factors to include.
 
 ```{r}
+prcomp(drop_na(animalRightsScaleItems), scale. = FALSE)
+abline(h=1)
+# Suggests 7 factors
+
+fa.parallel(animalRightsScaleItems)
+# Suggests 4 factors
 
 ```
 
@@ -177,31 +202,72 @@ Create a scree plot to help the decision on how many factors to include.
 Run the factor analysis with the chosen number of factors.
 
 ```{r}
-
+animalRights7Factors <- fa(animalRightsScaleItems, nfactors = 7, rotate = "varimax")
+animalRights4Factors <- fa(animalRightsScaleItems, nfactors = 4, rotate = "varimax")
 ```
 
 Sort the communality scores in decreasing order.
 
 ```{r}
-
+sort(animalRights7Factors$communality, decreasing = TRUE)
+sort(animalRights4Factors$communality, decreasing = TRUE)
 ```
 
 Calculate the mean communality scores.
 
 ```{r}
-
+mean(animalRights7Factors$communality)
+mean(animalRights4Factors$communality)
 ```
 
 Show the factor loadings for the chosen factor structure.
 
 ```{r}
-
+animalRights7Factors$loadings
+animalRights4Factors$loadings
 ```
 
 Visualize the factor structure.
 
 ```{r}
+fa.diagram(animalRights7Factors)
+fa.diagram(animalRights4Factors)
 
+  # Rational-scientific control
+  # * __ar 17.__ There are plenty of viable alternatives to the use of animals in biomedical and behavioral research.
+  # * __ar 6.__ Most medical research done on animals is unnecessary and invalid.
+  # * __ar 2.__ Animal research cannot be justified and should be stopped.
+  # * __ar 27.__ Most psychological research done on animals is unnecessary and invalid.
+  # * __ar 11.__ Insect pests (mosquitoes, cockroaches, flies, etc.) should be safely removed from the house rather than killed.
+  # * __ar 8.__ Pet owners are responsible for preventing their pets from killing other animals, such as cats killing mice or snakes eating live mice.
+  # * __ar 18.__ Research on animals has little or no bearing on problems confronting people.
+  # * __ar 25.__ Most cosmetics research done on animals is unnecessary and invalid.
+  
+  # Moral-social control
+  # * __ar 5.__ It is wrong to wear leather jackets and pants.
+  # * __ar 13.__ It is wrong to wear leather belts and shoes.
+  # * __ar 4.__ A human has no right to use a horse as a means of transportation (riding) or entertainment (racing).
+  # * __ar 26.__ It is morally wrong to eat chicken and fish.
+  # * __ar 22.__ It is a violation of an animal's rights to be held captive as a pet by a human.
+  # * __ar 23.__ It is wrong to wear animal fur (such as mink coats).
+  
+  # Philosophical control
+  # * __ar 21.__ Since many important questions cannot be answered by doing experiments on people, we are left with no alternatives but to do animal research.
+  # * __ar 19.__ New surgical procedures and experimental drugs should be tested on animals before they are used on people.
+  # * __ar 20.__ I am very concerned about pain and suffering in animals.
+  # * __ar 15.__ Having extended basic rights to minorities and women, it is now time to extend them also to animals.
+  # * __ar 12.__ Animals should be granted the same rights as humans.
+  # * __ar 9.__ We need more regulations governing the use of animals in research.
+  # * __ar 14.__ I would rather see humans die or suffer from disease than to see animals used in research.
+  
+  # Direct-Consumptive control
+  # * __ar 7.__ I have seriously considered becoming a vegetarian in an effort to save animal lives.
+  # * __ar 10.__ It is morally wrong to eat beef and other "red" meat.
+  # * __ar 24.__ It is appropriate for humans to kill animals that destroy human property, for example, rats, mice, and pigeons.
+  # * __ar 28.__ Hunters play an important role in regulating the size of deer populations.
+  # * __ar 1.__ Humans have no right to displace wild animals by converting wilderness areas into farmlands, cities, and other things designed for people.
+  # * __ar 3.__ It is morally wrong to drink milk and eat eggs.
+  
 ```
 
 ## Run linear regression
@@ -209,18 +275,30 @@ Visualize the factor structure.
 Calculate the factor scores.
 
 ```{r}
-
+animalRights7FactorsScores <- animalRights7Factors$scores
+animalRights4FactorsScores <- animalRights4Factors$scores
 ```
 
 Bind factor scores to the original dataset.
 
 ```{r}
+animalRightsScaleWith4Factors <- animalRightsScale %>%
+  cbind(animalRights4FactorsScores) %>%
+  rename(moralSocial = MR1, rationalScientific = MR2, philosophical = MR3, directConsumptive = MR4)
 
+animalRightsScaleWith7Factors <- animalRightsScale %>%
+  cbind(animalRights7FactorsScores)
 ```
 
 Run the logistic regression.
 
 ```{r}
+animalRights4FactorModel <- lm(liberal ~ rationalScientific + moralSocial + philosophical + directConsumptive, data = animalRightsScaleWith4Factors)
+summary(animalRights4FactorModel)
+# Items regarding direct consumption of animal products are the most influential in predicting liberal scores in the 4-factor model.
 
+animalRights7FactorModel <- lm(liberal ~ MR1 + MR5 + MR7 + MR3 + MR4 + MR6 + MR2, data = animalRightsScaleWith7Factors)
+summary(animalRights7FactorModel)
+# Items 28, 10, 24, 7 (subset of 4-factor model's Direct-Consumptive factor, all of the items from the factor that involves killing animals) remained the most influential.
 ```
 
