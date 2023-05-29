@@ -292,10 +292,13 @@ Create the more complex model based on the results of the model diagnostics. Als
 
 glance(model3)
 
-tidy(model3, conf.int = TRUE, conf.level = 0.95)
+linear_model_final<-
+  tidy(model3, conf.int = TRUE, conf.level = 0.95)
+
+linear_model_final
 
 
-
+write_csv(linear_model_final, "~/R_Projects/r_data_analysis-22_23_fall/data/assignment_3_model.csv")
 ```
 
 The equation of the model:
