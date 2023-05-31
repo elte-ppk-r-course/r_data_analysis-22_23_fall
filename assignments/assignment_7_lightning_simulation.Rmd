@@ -1,6 +1,6 @@
 ---
 title: "Assignment 7: Lightning simulation"
-author: "Tamas Nagy"
+author: "Bela Szlovicsak"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -9,6 +9,8 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(gifski)
+library(gganimate)
 ```
 
 
@@ -31,7 +33,90 @@ There is no dataset for this project. You have to simulate from scratch!
 
 ![Lightning](assignment_7_example/example_lightning.png)
 
+Let's create a function to be able to make some modifications to our lightnings!
 ```{r}
+#We will require three variables for this function. The first describes non-forking paths, while the second two describes how likely is the lightning to go in a direction depending on which fork is it part of. The other two variables control the color and width of the lightning segments.
+
+lightning <- function(prob1 = c(.1, .25, .3, .25, .1),
+                      l_color = "skyblue"){
+ 
+  #First i creata a matrix. This will track the current row, which we observe and the point through which the lightning goes. While also noting where the lightning was coming from. (The Matrix is called B instead of A for historical reasons)
+  
+  B <- matrix(rep(0, 66049), nrow = 257, dimnames = list("Yend" = 0:256, "Xend" =  0:256))
+ B[1, 129] <- 1
+
+  #This for loop is the main tool here. It checks the position of the lightning in each row and randomly crates the point in the next row where the lightning will go. The new position will contain the x coordinate of the previous position, while the Y position can be calculated by subtracting one from the current Y coordinate.
+ #So for each cell in the end matrix B[i,j] the value is either 0 (no lightning) or an integer (k), which denotes that the lightning was previously in B[i-1,k].
+ #Unfortunately I havent figured out yet how to do this process without for loops.
+ 
+ for(i in 1:256){
+   #Get the current lightning positions in the new row
+   pos <- which(B[i,] > 0)
+   #Decide for each if they will fork
+   will_they_fork <- replicate(length(pos), rbinom(1, 1, prob = .01))
+   for (j in pos) {
+    #Iterate through positions, get their forking status
+      it_fork <- will_they_fork[which(pos == j)]
+    if (it_fork == 0) {
+      #Create a random direction for them and put the new position into the next row
+      a <- sample(-2:2, 1, prob = prob1)
+      #We store the origin of the points in B (y coordinates are easy to calculate)
+      B[i + 1, j + a] <- j
+    } else {
+      #Do the previous step twice if there is a fork. They will go separate ways
+      a <- sample(-5:-1, 1)
+      b <- sample(1:5, 1)
+      B[i+1, j + a] <- j
+      B[i+1, j + b] <- j
+     } 
+    
+   }
+  
+ }
+
+  #In this step we transform the matrix into a dataframe where the previous rows and columns are now two columns. The positive cells will be the endpoints of the lightning segments, while their beginnings will be calculated from the Y coordinate and the X coordinate contained in the matrix cells.
+ 
+ B_df <- as.data.frame(as.table(B))
+ colnames(B_df) <- c("Yend", "Xend", "X")
+ B_df <- B_df %>% 
+  filter(X > 1) %>% 
+  arrange(Yend) %>% 
+  mutate(Xend = as.numeric(Xend),
+         Yend = as.numeric(Yend),
+         Y = Yend  - 1)
+ #We put a grouping variable into the dataframe.
+ B_df_ready <- bind_cols(B_df, "lightning" = 1)
+
+ #We plot the lightning, using the extra aesthetic specifications from the supported variables.
+ 
+ ggplot(aes(X, Y, xend = Xend, yend = Yend, group = lightning), data = B_df_ready) +
+  geom_segment(color = l_color, linewidth = .1) +
+  xlim(0,300) +
+  ylim(257,0) +
+  theme_void() +
+  theme(panel.background = element_rect(fill = "black"))
+}
+```
+
+
+```{r}
+#For demonstration and reproduceability I will set the seed here
+set.seed(911)
+lightning()
+```
+
+```{r}
+#Here we can easily set a to change the likelihood of the lightning going left or right. Supporting a high value in the middle will result in a very stright lightning, while higher values at the ends will produce more skewed lightnings.
+
+a <- c(10,2,1,2,10)
+a <- a/sum(a)
+
+options(gganimate.nframes = 256)
+
+lightning(a) +
+  transition_time(Yend) +
+  shadow_mark()
 
 ```
+
 
