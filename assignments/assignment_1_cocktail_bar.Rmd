@@ -46,11 +46,9 @@ The ingredients are currently in a single cell for each cocktail. It would be be
 library(tidyverse)
 library(stringr)
 
-cleaned_cocktail_data <- cocktail_data %>%
-  separate_rows(ingredients, sep = "<br/>") %>%
-  mutate(ingredients = str_replace_all(ingredients, "\\d/\\d\\s*\\w+\\s*", "")) %>%
-  mutate(ingredients = str_replace_all(ingredients, "\\d+\\s*\\w+\\s*", "")) %>%
-  mutate(ingredients = str_replace_all(ingredients, "\\d+%\\s*\\w+\\s*|\\s*\\(.*?\\)", "")) %>%
+cleaned_cocktail_data <- separate_rows(cocktail_data, ingredients, sep = "\n") %>%
+  mutate(ingredients = str_replace_all(ingredients, "\\d+/?\\d*\\s*(?:\\w+\\s*)?", "")) %>%
+  mutate(ingredients = str_replace_all(ingredients, "\\s*\\(.*?\\)", "")) %>%
   mutate(ingredients = str_trim(ingredients))
 ```
 
