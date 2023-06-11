@@ -179,7 +179,13 @@ tribble(~name, ~Lime, ~`White rum`, ~`Cane sugar`, ~`Coca-cola`, ~Mint, ~Soda,
 ```
 
 ```{r}
-
+# Pivot the data to create the matrix
+cocktail_matrix <- cleaned_cocktail_data %>%
+  select(name, ingredients) %>%
+  separate_rows(ingredients, sep = "<br/>") %>%
+  mutate(ingredient_presence = "X") %>%
+  pivot_wider(names_from = ingredients, values_from = ingredient_presence, values_fill = "") %>%
+  relocate(name, everything())
 ```
 
 
