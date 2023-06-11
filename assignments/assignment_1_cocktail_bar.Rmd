@@ -68,7 +68,13 @@ print(ingredient_list) # Printing out the list for the supplier
 How many different ingredients you will need?
 
 ```{r}
+# Calculate the number of unique ingredients
+num_unique_ingredients <- cleaned_cocktail_data %>%
+  distinct(ingredients) %>%
+  nrow()
 
+# Print the result
+print(num_unique_ingredients)
 ```
 
 ## 5. What are the top 10 ingredients?
