@@ -20,6 +20,7 @@ library(tidyverse)
 library(readr)
 library(rmarkdown)
 library(stringr)
+library(tidytext) # Tidytext package is needed for exercise 8
 ```
 
 # Background
@@ -119,19 +120,50 @@ print(cocktails_with_max_ingredients)
 Count all cocktails with only one ingredient, and
 
 ```{r}
+# Count the frequency of each ingredient
+ingredient_frequency <- cleaned_cocktail_data %>%
+  count(ingredients)
 
+# Count the number of ingredients that appear in only one cocktail
+num_rare_ingredients <- sum(ingredient_frequency$n == 1)
+
+# Print the result
+print(num_rare_ingredients)
 ```
 
 ## 8. Which cocktail has an ingredient that is only used in one cocktail?
 
 ```{r}
+# Count the number of cocktails each ingredient appears in
+ingredient_counts <- cleaned_cocktail_data %>%
+  unnest_tokens(ingredient, ingredients) %>% # Tidytext package
+  group_by(ingredient) %>%
+  summarise(num_cocktails = n_distinct(name))
 
+# Filter ingredients that appear in only one cocktail
+rare_ingredients <- ingredient_counts %>%
+  filter(num_cocktails == 1)
+
+# Filter cocktails that have rare ingredients
+cocktails_with_rare_ingredients <- cleaned_cocktail_data %>%
+  unnest_tokens(ingredient, ingredients) %>%
+  filter(ingredient %in% rare_ingredients$ingredient) %>%
+  distinct(name)  # Keep only distinct cocktail names
+
+# Print the names of the cocktails with rare ingredients
+print(cocktails_with_rare_ingredients$name)
 ```
 
 ## 9. What are the cocktails without rare ingredients?
 
 ```{r}
-  
+# Filter cocktails that do not have rare ingredients
+cocktails_without_rare_ingredients <- cleaned_cocktail_data %>%
+  anti_join(cocktails_with_rare_ingredients, by = "name") %>%
+  distinct(name)  # Keep only distinct cocktail names
+
+# Print the names of the cocktails without rare ingredients
+print(cocktails_without_rare_ingredients$name)
 ```
 
 ## 10. Create a cheat sheet for the bartender!
