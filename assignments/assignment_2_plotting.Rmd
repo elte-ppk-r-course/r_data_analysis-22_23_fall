@@ -24,7 +24,10 @@ library(ggplot2)
 library(viridis)
 library(forcats)
 library(dplyr)
+library(scales)
 expeditions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-22/expeditions.csv') # We read the data
+phd_field <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
+
 ```
 
 ## Task 1: Climbing expeditions
@@ -52,17 +55,17 @@ filtered_data <- filtered_data %>%
 # Create the bar plot with flipped coordinates
 ggplot(filtered_data, aes(x = peak_name, fill = season)) +
   geom_bar() +
-  labs(x="", y = "Number of Expeditions") +
+  labs(x="", y = "Number of Expeditions") + # Set labels and title
    ggtitle("The 15 most popular peaks stacked by season of expedition") +
-  scale_fill_viridis(discrete = TRUE) +
-  theme_light() +
-  theme(legend.position = "bottom") +
-  coord_flip()
+  scale_fill_viridis(discrete = TRUE) + # Set color
+  theme_light() + # Set light theme
+  theme(legend.position = "bottom") + # Move the legends to the bottom of the plot
+  coord_flip() # Rotate the plot 
 ```
 
 ## Task 2: PhDs awarded
 
-The 2019-02-19 TidyTueday dataset is about phd-s awarded by year and field. There is only one dataset, it is called `phd_by_field`. Reproduce the plot below!
+The 2019-02-19 TidyTueday dataset is about phd-s awarded by year and field. There is only one dataset, it is called `phd_by_field`. Reproduce the plot below! 
 
 Notes:
 
@@ -71,6 +74,22 @@ Notes:
 -   The line size is 1.2, the colors are from the brewer "Dark2" palette. The theme is set to minimal.
 
 ```{r}
+# Aggregate the data by broad_field and year
+aggregated_data <- aggregate(n_phds ~ broad_field + year, data = phd_field, FUN = sum)
+
+# Set up the plot
+ggplot(data = aggregated_data, aes(x = year, y = n_phds, group = broad_field, color = broad_field)) +
+geom_line(linewidth = 1.2) +
+scale_color_brewer(palette = "Dark2") +
+labs(title = "Number of awarded Ph.D.s in the US by year",
+      x = "",
+      y = "",
+      color = "Broad field") +
+theme_minimal() +
+scale_x_continuous(breaks = pretty_breaks(4)) +
+scale_y_continuous(labels = comma_format())
+
+
 
 ```
 
