@@ -40,9 +40,9 @@ The 2020-09-22 TidyTueday datasets are about climbing expeditions. From the thre
 filtered_data <- expeditions %>%
   filter(peak_name != "Other")
 
-# Use fct_lump() to get the 15 most frequent peaks, and drop the "Other" named peak
+# Use fct_lump() to get the 15 most frequent peaks
 unique_peaks <- filtered_data$peak_name %>%
-  fct_lump(n = 15, other_level = "")
+  fct_lump(n = 15)
 
 # Reorder the factor levels based on the count of expedition IDs
 filtered_data <- filtered_data %>%
