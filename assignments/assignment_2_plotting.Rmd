@@ -55,10 +55,10 @@ filtered_data <- filtered_data %>%
 # Create the bar plot with flipped coordinates
 ggplot(filtered_data, aes(x = peak_name, fill = season)) +
   geom_bar() +
-  labs(x="", y = "Number of Expeditions") + # Set labels and title
+  labs(x="", y = "Number of Expeditions") + # Setting labels and title
    ggtitle("The 15 most popular peaks stacked by season of expedition") +
-  scale_fill_viridis(discrete = TRUE) + # Set color
-  theme_light() + # Set light theme
+  scale_fill_viridis(discrete = TRUE) + # Setting color
+  theme_light() + # Setting light theme
   theme(legend.position = "bottom") + # Move the legends to the bottom of the plot
   coord_flip() # Rotate the plot 
 ```
@@ -80,14 +80,14 @@ aggregated_data <- aggregate(n_phds ~ broad_field + year, data = phd_field, FUN 
 # Set up the plot
 ggplot(data = aggregated_data, aes(x = year, y = n_phds, group = broad_field, color = broad_field)) +
 geom_line(linewidth = 1.2) +
-scale_color_brewer(palette = "Dark2") +
-labs(title = "Number of awarded Ph.D.s in the US by year",
+scale_color_brewer(palette = "Dark2") + # Setting color
+labs(title = "Number of awarded Ph.D.s in the US by year", # Setting labels and title
       x = "",
       y = "",
       color = "Broad field") +
-theme_minimal() +
-scale_x_continuous(breaks = pretty_breaks(4)) +
-scale_y_continuous(labels = comma_format())
+theme_minimal() + # Setting theme minimal
+scale_x_continuous(breaks = pretty_breaks()) + # Setting pretty brakes
+scale_y_continuous(labels = comma_format()) # Setting comma format
 
 
 
