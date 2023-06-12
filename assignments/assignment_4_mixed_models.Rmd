@@ -1,5 +1,5 @@
 ---
-title: "Assignment 5: Mixed models"
+title: "Assignment 4: Mixed models"
 author: "Marton Kovacs / Zoltan Kekecs"
 output: html_document
 editor_options: 
@@ -9,6 +9,12 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(ggplot2)
+library(performance)
+library(broom)
+library(haven)
+library(stats)
+library(lme4)
 ```
 
 # Introduction
@@ -58,7 +64,16 @@ Compare the model coefficients and the confidence intervals observed in this ass
 Read the datasets used in this assignment. Pay attention to the extensions of the datafiles.
 
 ```{r}
+dataset_A <- read_sav("../data/assignment_4_dataset_A.sav")
+dataset_B <- read_sav("../data/assignment_4_dataset_B.sav")
+```
 
+```{r}
+glimpse(dataset_A)
+dataset_A
+
+glimpse(dataset_B)
+dataset_B
 ```
 
 ## Exploratory data analysis
@@ -66,7 +81,32 @@ Read the datasets used in this assignment. Pay attention to the extensions of th
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
+summary(dataset_A)
+summary(dataset_B)
 
+dataset_A %>%
+  count(sex)
+
+dataset_B %>%
+  count(sex)
+
+dataset_A %>%
+  ggplot(aes(
+    age,
+    pain,
+    color = sex
+  )) +
+  geom_point() +
+  facet_wrap(~hospital)
+
+dataset_B %>%
+  ggplot(aes(
+    age,
+    pain,
+    color = sex
+  )) +
+  geom_point() +
+  facet_wrap(~hospital)
 ```
 
 ## Correct coding errors
@@ -74,6 +114,51 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
-
+dataset_A <- dataset_A %>%
+  mutate(
+    sex = as.factor(sex),
+    sex = fct_collapse(sex, male = c("male", "Male"))
+  ) %>%
+  filter(household_income >= 0)
 ```
 
+## Model building
+```{r}
+model <- lmer(
+  pain ~ sex +
+    age +
+    STAI_trait +
+    pain_cat +
+    cortisol_serum +
+    mindfulness +
+    (1 | hospital),
+  data = dataset_A
+)
+
+model
+check_model(model)
+
+# confidence intervals, coefficients
+coefs <- coef(summary(model))
+confints <- confint(model)
+```
+
+## Calculate R^2 values
+```{r}
+r2(model)
+```
+
+
+## Evaluate model performance on dataset B
+```{r}
+predicted_pain <- predict(model, dataset_B, re.form = NA)
+true_pain <- dataset_B %>%
+  pull(pain)
+
+TSS <- var(true_pain) * 200
+RSS <- sum((true_pain - predicted_pain)**2)
+
+R2 <- 1 - (RSS / TSS)
+
+R2
+```

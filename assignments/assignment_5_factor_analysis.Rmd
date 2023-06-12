@@ -1,5 +1,5 @@
 ---
-title: "Assignment 6: Factor Analysis"
+title: "Assignment 5: Factor Analysis"
 author: "Marton Kovacs / Zoltan Kekecs"
 output: html_document
 editor_options: 
@@ -9,6 +9,8 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(ggplot2)
+library(corrplot)
 ```
 
 # Introduction
@@ -103,13 +105,14 @@ Talk about the limitations of your study and findings.
 Read the Animal Rights Scale (ARQ) dataset from the 'data/' folder. Pay attention to the extension.
 
 ```{r}
-
+dataset <- read_csv("../data/assignment_5_dataset.csv")
 ```
 
 ## EDA
 
 ```{r}
-
+glimpse(dataset)
+summary(dataset)
 ```
 
 ## Data manipulation
@@ -119,7 +122,19 @@ Recode the sex and party variables as factor type variables with the following l
   * party: 1 - democrat, 2 - republican, 3 - other, 4 - none
 
 ```{r}
-
+dataset <- dataset %>%
+  mutate(sex = recode(sex,
+    `1` = "male",
+    `2` = "female"
+  )) %>%
+  mutate(party = recode(party,
+    `1` = "democrat",
+    `2` = "republican",
+    `3` = "other",
+    `4` = "none"
+  )) %>%
+  drop_na(sex) %>%
+  drop_na(party)
 ```
 
 # Creating a correlation matrix
@@ -127,7 +142,7 @@ Recode the sex and party variables as factor type variables with the following l
 __Note:__ Remember to only include the variables of the questionnaire that will be part of the factor analysis.
 
 ```{r}
-
+corr_data <- cor(dataset[, c(1:28)], method = c("pearson", "kendall", "spearman"))
 ```
 
 Create the correlation matrix.
@@ -141,7 +156,7 @@ Create the correlation matrix.
 Create a visualization of the results of the correlation matrix.
 
 ```{r}
-
+corrplot(corr_data)
 ```
 
 ## Test for factorability

@@ -20,6 +20,8 @@ You will have to create 3 plots based on the datasets and instructions detailed 
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(tidytuesdayR)
+library(scales)
+library(ggplot2)
 ```
 
 ## Task 1: Climbing expeditions
@@ -31,7 +33,25 @@ The 2020-09-22 TidyTueday datasets are about climbing expeditions. From the thre
 -   The bar colors use the viridis palette and light theme.
 
 ```{r}
+expeditions <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-22/expeditions.csv")
 
+expeditions_clean <- expeditions %>%
+  select(peak_name, season) %>%
+  mutate(peak_name = fct_lump_n(peak_name, 15)) %>%
+  filter(peak_name != "Other")
+
+expeditions_groupby <- expeditions_clean %>%
+  count(peak_name, season)
+
+ggplot(expeditions_groupby, aes(x = n, y = fct_reorder(peak_name, n, .fun = sum), fill = season)) +
+  geom_col() +
+  theme_light() +
+  scale_fill_viridis_d() +
+  labs(title = "The 15 most popular peaks stacked by season of expedition", x = "Number of expeditions", y = NULL) +
+  theme(
+    axis.title.y = element_blank(),
+    legend.position = "bottom"
+  )
 ```
 
 ## Task 2: PhDs awarded
@@ -45,7 +65,20 @@ Notes:
 -   The line size is 1.2, the colors are from the brewer "Dark2" palette. The theme is set to minimal.
 
 ```{r}
+phd_by_field <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
 
+phd_by_field_groupby <- phd_by_field %>%
+  filter(!is.na(n_phds)) %>%
+  group_by(broad_field, year) %>%
+  summarize(Count = sum(n_phds))
+
+ggplot(phd_by_field_groupby, aes(x = year, y = Count, color = broad_field)) +
+  geom_line(size = 1.2) +
+  scale_x_continuous(breaks = pretty_breaks(6)) +
+  scale_y_continuous(label = comma_format()) +
+  scale_colour_brewer(palette = "Dark2", name = "Broad field") +
+  theme_minimal() +
+  labs(title = "Number of awarded phd-s by year")
 ```
 
 ## Task 3: Commute in the US
@@ -59,5 +92,22 @@ Notes:
 -   The point size is 2, . The theme is set to light.
 
 ```{r}
+commute <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-05/commute.csv")
 
+commute_pivoted <- commute %>%
+  group_by(mode, state_abb, state_region) %>%
+  summarize(Count = sum(n)) %>%
+  pivot_wider(names_from = "mode", values_from = "Count")
+
+ggplot(commute_pivoted, aes(x = Walk, y = Bike, color = state_region)) +
+  geom_point(size = 2) +
+  geom_text(aes(label = state_abb), colour = "black") +
+  scale_x_log10(label = comma_format()) +
+  scale_y_log10(limits = c(100, 150000), label = comma_format()) +
+  theme_light() +
+  labs(
+    x = "Number of people walking to work (log N)",
+    y = "Number of people biking to work (log N)",
+    title = "Number of people walking vs. biking to work in each USA state",
+    color = "State region")
 ```

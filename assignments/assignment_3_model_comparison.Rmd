@@ -54,12 +54,22 @@ In your discussion of the findings, briefly interpret the results of the above a
 
 # Solution
 
+```{r}
+library(tidyverse)
+library(readxl)
+library(ggpubr)
+library(broom)
+library(regclass)
+library(performance)
+library(see)
+```
+
 ## Read the data
 
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
-
+pain_experienced <- read_xlsx("../data/assignment_3_dataset.xlsx")
 ```
 
 ## Data and model diagnostics 
@@ -68,8 +78,37 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
-```{r}
 
+##### check out the data
+```{r}
+print(pain_experienced)
+```
+
+##### max pain 50, max mindfulness 6.22 => outliers
+```{r}
+pain_experienced %>%
+  summary()
+```
+
+##### sex distribution (1 woman => clean data)
+```{r}
+pain_experienced %>%
+  count(sex)
+```
+
+```{r}
+ggplot(pain_experienced, aes(age, pain, color = sex)) +
+  geom_point()
+```
+
+##### iq distribution
+```{r}
+ggdensity(pain_experienced$IQ, xlab = "Distributation of IQ")
+```
+
+##### weight distribution
+```{r}
+ggdensity(pain_experienced$weight, xlab = "Distributation of weight")
 ```
 
 #### Correct coding errors
@@ -77,7 +116,18 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+pain_experienced_clean <- pain_experienced %>%
+  mutate(
+    sex = replace(sex, sex == "woman", "female"),
+    mindfulness = if_else(mindfulness > 6, 6, mindfulness)
+  ) %>%
+  filter(pain <= 10) %>%
+  filter(pain >= 0)
 
+model <- lm(pain ~ sex + age, data = pain_experienced_clean)
+print(model)
+
+plot(model, 5)
 ```
 
 ### Model diagnostics
@@ -86,35 +136,39 @@ If you find values in the dataset during the EDA, that are not correct based on 
 In order to test the more complex model for outliers and to test the assumptions first build the model.
 
 ```{r}
-
+complex_model <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + cortisol_saliva, data = pain_experienced_clean)
+summary(complex_model)
+tidy(complex_model)
 ```
 
 #### Checking for influential outliers
 
 Check for outlier values in the model.
 
+##### there are no too influential outliers
 ```{r}
-
+plot(complex_model, 5)
 ```
 
 #### Checking assumptions
 
 Check the normality assumption.
 
+##### normality can be assumed
 ```{r}
-
+plot(complex_model, 2)
 ```
 
 Check the linearity assumption.
 
 ```{r}
-
+plot(complex_model, 1)
 ```
 
 Check the homoscedasticty assumption (homogeneity of variance).
 
 ```{r}
-
+plot(complex_model, 3)
 ```
 
 Check the multicollinearity assumption.
@@ -125,8 +179,9 @@ Some info about VIF:
 https://statisticalhorizons.com/multicollinearity
 http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity-in-regression-analysis
 
+##### cortisol variables are correlated, cortisol_saliva removed from complex_model2
 ```{r}
-
+VIF(complex_model)
 ```
 
 ### Making decision based on model diagnostics
@@ -134,58 +189,53 @@ http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity
 If based on the assumption tests you decide to drop a predictor variable you should do that here. Create your updated model.
 
 ```{r}
-
+complex_model2 <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data = pain_experienced_clean)
 ```
 
 #### Checking outliers of the updated model
 
 ```{r}
-
+plot(complex_model2, 5)
 ```
 
 #### Checking assumptions of the updated model
 
-Normality assumption
+Normality assumption, Linearity assumption, Homoscedasticty assumption (homogeneity of variance), Multicollinearity assumption
 
+##### found Normality assumption, Linearity assumption, Homoscedasticty assumption (homogeneity of variance), Multicollinearity assumption acceptable
 ```{r}
-
+check_model(complex_model2)
 ```
 
-Linearity assumption
-
-```{r}
-
-```
-
-Homoscedasticty assumption (homogeneity of variance)
-
-```{r}
-
-```
-
-Multicollinearity assumption
-
-```{r}
-
-```
 
 ## Model comparison
 
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
+##### using first model
+##### The regression equation: Y = 8.49 + -0.0891 * age + 0.103 * sexmale
 ```{r}
-
+glance(model)
+tidy(model, conf.int = TRUE, conf.level = 0.95)
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
+##### using complex_model2
+##### The regression equation: Y = -0.97 + 0.20*X1 - 0.12*X2 - 0.04*X3 + 0.27*X4 + 0.35*X5 - 0.09*X6
 ```{r}
+glance(complex_model2)
 
+linear_model_final <-
+  tidy(complex_model2, conf.int = TRUE, conf.level = 0.95)
+
+linear_model_final
 ```
 
 Compare the two models.
 
 ```{r}
-
+compare <- anova(model, complex_model2)
+compare
 ```
 
