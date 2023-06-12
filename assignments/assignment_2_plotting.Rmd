@@ -25,8 +25,10 @@ library(viridis)
 library(forcats)
 library(dplyr)
 library(scales)
+library(tidyr)
 expeditions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-22/expeditions.csv') # We read the data
 phd_field <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
+commute_mode <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-05/commute.csv")
 
 ```
 
@@ -104,5 +106,28 @@ Notes:
 -   The point size is 2, . The theme is set to light.
 
 ```{r}
+# Filter out rows with missing state_region values
+filtered_data2 <- commute_mode %>%
+  filter(mode %in% c("Walk", "Bike"))
+
+# Aggregate the data by state
+aggregated_data2 <- filtered_data2 %>%
+  group_by(state) %>%
+  summarize(Walk = sum(n[mode == "Walk"]),
+            Bike = sum(n[mode == "Bike"]),
+            state_region = first(state_region),
+            state_abb = first(state_abb))
+
+# Set up the plot
+ggplot(data = aggregated_data2, aes(x = Walk, y = Bike, color = state_region, label = state_abb)) +
+  geom_point(size = 2) +
+  geom_text(color = "Black", check_overlap = TRUE) + # Disable overleaping of state_abbs (monitor size matters)
+  labs(title = "Title number of people walking vs. biking to work in each USA state", # Setting title and labels
+       x = "Number of ppl biking to work (log N)",
+       y = "Number of ppl walking to work (log N)",
+       color = "State region") + 
+  scale_x_log10(labels = comma_format()) + # Log transformations and coma formats
+  scale_y_log10(labels = comma_format()) +
+  theme_light() # Setting theme light
 
 ```
