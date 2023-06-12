@@ -20,6 +20,11 @@ You will have to create 3 plots based on the datasets and instructions detailed 
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(tidytuesdayR)
+library(ggplot2)
+library(viridis)
+library(forcats)
+library(dplyr)
+expeditions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-22/expeditions.csv') # We read the data
 ```
 
 ## Task 1: Climbing expeditions
@@ -31,7 +36,28 @@ The 2020-09-22 TidyTueday datasets are about climbing expeditions. From the thre
 -   The bar colors use the viridis palette and light theme.
 
 ```{r}
+# Filter out the "Other" named peak from the data
+filtered_data <- expeditions %>%
+  filter(peak_name != "Other")
 
+# Use fct_lump() to get the 15 most frequent peaks, and drop the "Other" named peak
+unique_peaks <- filtered_data$peak_name %>%
+  fct_lump(n = 15, other_level = "")
+
+# Reorder the factor levels based on the count of expedition IDs
+filtered_data <- filtered_data %>%
+  mutate(peak_name = fct_reorder(peak_name, expedition_id, .fun = function(x) sum(!is.na(x)))) %>%
+  filter(peak_name %in% unique_peaks)
+
+# Create the bar plot with flipped coordinates
+ggplot(filtered_data, aes(x = peak_name, fill = season)) +
+  geom_bar() +
+  labs(x="", y = "Number of Expeditions") +
+   ggtitle("The 15 most popular peaks stacked by season of expedition") +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_light() +
+  theme(legend.position = "bottom") +
+  coord_flip()
 ```
 
 ## Task 2: PhDs awarded
