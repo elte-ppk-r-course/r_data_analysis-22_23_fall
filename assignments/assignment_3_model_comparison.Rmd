@@ -61,6 +61,9 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 ```{r}
 library(readxl) # Read every package
 library(dplyr)
+library(lme4)
+library(broom)
+library(car) # For vif
 assignment_3_dataset <- read_xlsx("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_3_dataset.xlsx") # Read the dataset
 ```
 
@@ -92,7 +95,7 @@ If you find values in the dataset during the EDA, that are not correct based on 
 
 ```{r}
 assignment_3_dataset <- assignment_3_dataset %>% # Changing all female to woman in the dataset
-  mutate(sex = recode(sex, "woman" = "female"))
+  mutate(sex = dplyr::recode(sex, "woman" = "female"))
 levels(assignment_3_dataset$sex) # Checking if we were successful
 # Filter the dataset from the range coding errors
 assignment_3_dataset <- subset(assignment_3_dataset, pain >= 1 & pain <= 10 & mindfulness >= 1 & mindfulness <= 6)
@@ -106,6 +109,7 @@ range(assignment_3_dataset$mindfulness) # Checking if we were successful
 In order to test the more complex model for outliers and to test the assumptions first build the model.
 
 ```{r}
+complex_model <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum + cortisol_saliva, data = assignment_3_dataset)
 
 ```
 
@@ -114,6 +118,11 @@ In order to test the more complex model for outliers and to test the assumptions
 Check for outlier values in the model.
 
 ```{r}
+complex_model %>% # We use Cook's distance to check for potential outliers
+  augment() %>%
+  select(age,sex,STAI_trait,pain_cat, mindfulness,cortisol_serum,cortisol_saliva,cooks_dist = .cooksd) %>%
+  arrange(desc(cooks_dist)) %>% # We use descending order, usually a value higher than 1 determines an outlier
+  head() # Output indicates there are no influental outlier, because every value is way under 1 
 
 ```
 
@@ -122,19 +131,19 @@ Check for outlier values in the model.
 Check the normality assumption.
 
 ```{r}
-
+plot(complex_model, which = 2)
 ```
 
 Check the linearity assumption.
 
 ```{r}
-
+plot(complex_model, which = 1)
 ```
 
 Check the homoscedasticty assumption (homogeneity of variance).
 
 ```{r}
-
+plot(complex_model, which = 3)
 ```
 
 Check the multicollinearity assumption.
@@ -146,7 +155,17 @@ https://statisticalhorizons.com/multicollinearity
 http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity-in-regression-analysis
 
 ```{r}
+# Extract predictor variable names from the model formula
+predictor_names <- attr(terms(complex_model), "term.labels")
 
+# Calculate VIF
+vif_values <- vif(complex_model)
+
+# Create data frame with predictor variable names and VIF values
+vif_results <- data.frame(variable = predictor_names, vif = vif_values)
+
+# Display the VIF results
+print(vif_results) # cortisol_serum and cortisol_saliva are both over 5
 ```
 
 ### Making decision based on model diagnostics
@@ -154,13 +173,18 @@ http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity
 If based on the assumption tests you decide to drop a predictor variable you should do that here. Create your updated model.
 
 ```{r}
-
+# We will drop cortisol_salvia from the model, because it has a higher vif than cortisol_serum. It is more strongly collerated with the other variables too, therefore we can have a more efficient model this way.
+updated_complex_model <- lm(pain ~ age + sex + STAI_trait + pain_cat + mindfulness + cortisol_serum, data = assignment_3_dataset)
 ```
 
 #### Checking outliers of the updated model
 
 ```{r}
-
+updated_complex_model %>% # We use Cook's distance to check for potential outliers
+  augment() %>%
+  select(age,sex,STAI_trait,pain_cat, mindfulness,cortisol_serum,cooks_dist = .cooksd) %>%
+  arrange(desc(cooks_dist)) %>% # We use descending order, usually a value higher than 1 determines an outlier
+  head() # Output indicates there are no influental outlier, because every value is way under 1 
 ```
 
 #### Checking assumptions of the updated model
@@ -168,25 +192,35 @@ If based on the assumption tests you decide to drop a predictor variable you sho
 Normality assumption
 
 ```{r}
-
+plot(updated_complex_model, which = 2)
 ```
 
 Linearity assumption
 
 ```{r}
-
+plot(updated_complex_model, which = 1)
 ```
 
 Homoscedasticty assumption (homogeneity of variance)
 
 ```{r}
-
+plot(updated_complex_model, which = 3)
 ```
 
 Multicollinearity assumption
 
 ```{r}
+# Extract predictor variable names from the model formula
+updated_predictor_names <- attr(terms(updated_complex_model), "term.labels")
 
+# Calculate VIF
+updated_vif_values <- vif(updated_complex_model)
+
+# Create data frame with predictor variable names and VIF values
+updated_vif_results <- data.frame(updated_variable = updated_predictor_names, updated_vif = updated_vif_values)
+
+# Display the VIF results
+print(updated_vif_results) # Now cortisol_serum is reduced to 1.533348 
 ```
 
 ## Model comparison
