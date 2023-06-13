@@ -155,17 +155,8 @@ https://statisticalhorizons.com/multicollinearity
 http://blog.minitab.com/blog/understanding-statistics/handling-multicollinearity-in-regression-analysis
 
 ```{r}
-# Extract predictor variable names from the model formula
-predictor_names <- attr(terms(complex_model), "term.labels")
-
 # Calculate VIF
-vif_values <- vif(complex_model)
-
-# Create data frame with predictor variable names and VIF values
-vif_results <- data.frame(variable = predictor_names, vif = vif_values)
-
-# Display the VIF results
-print(vif_results) # cortisol_serum and cortisol_saliva are both over 5
+vif(complex_model) # cortisol_serum and cortisol_saliva are both over 5
 ```
 
 ### Making decision based on model diagnostics
@@ -210,17 +201,8 @@ plot(updated_complex_model, which = 3)
 Multicollinearity assumption
 
 ```{r}
-# Extract predictor variable names from the model formula
-updated_predictor_names <- attr(terms(updated_complex_model), "term.labels")
-
 # Calculate VIF
-updated_vif_values <- vif(updated_complex_model)
-
-# Create data frame with predictor variable names and VIF values
-updated_vif_results <- data.frame(updated_variable = updated_predictor_names, updated_vif = updated_vif_values)
-
-# Display the VIF results
-print(updated_vif_results) # Now cortisol_serum is reduced to 1.533348 
+vif(updated_complex_model) # Now cortisol_serum is reduced to 1.533348  
 ```
 
 ## Model comparison
