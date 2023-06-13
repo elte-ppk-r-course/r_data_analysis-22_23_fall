@@ -63,6 +63,7 @@ library(readxl) # Read every package
 library(dplyr)
 library(lme4)
 library(broom)
+library(ggplot2)
 library(car) # For vif
 assignment_3_dataset <- read_xlsx("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_3_dataset.xlsx") # Read the dataset
 ```
@@ -77,7 +78,7 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 nrow(assignment_3_dataset) # We should have 160 participants according to the text
 assignment_3_dataset$sex <- factor(assignment_3_dataset$sex) # Setting the sex variable to factor
 levels(assignment_3_dataset$sex) # Checking the levels, the output indicates there is a coding error (woman+females)
-range(assignment_3_dataset$pain) # Should be between 1-10, the output indicates there is a coding error
+range(assignment_3_dataset$pain) # Should be between 0-10, the output indicates there is a coding error
 range(assignment_3_dataset$age) #
 range(assignment_3_dataset$STAI_trait) # Should be between 20 and 80, output indicates ranges are correct
 range(assignment_3_dataset$pain_cat) # Should be between 0-52, the output indicates ranges are correct
@@ -87,6 +88,13 @@ range(assignment_3_dataset$mindfulness) # Should be between 1-6, the output indi
 range(assignment_3_dataset$weight)
 range(assignment_3_dataset$IQ)
 range(assignment_3_dataset$household_income)
+
+
+ggplot(assignment_3_dataset, aes(x = age, y = pain, color = sex)) + # Creating a scatter plot
+  geom_point() +
+  labs(x = "Age", y = "Pain", color = "Sex") +
+  ggtitle("Scatter Plot: Age vs. Pain with Sex") # As we have found earlier, we have some problems with the dataset
+
 ```
 
 #### Correct coding errors
@@ -95,12 +103,22 @@ If you find values in the dataset during the EDA, that are not correct based on 
 
 ```{r}
 assignment_3_dataset <- assignment_3_dataset %>% # Changing all female to woman in the dataset
-  mutate(sex = dplyr::recode(sex, "woman" = "female"))
+  mutate(sex = dplyr::recode(sex, "woman" = "female")) 
 levels(assignment_3_dataset$sex) # Checking if we were successful
+
 # Filter the dataset from the range coding errors
-assignment_3_dataset <- subset(assignment_3_dataset, pain >= 1 & pain <= 10 & mindfulness >= 1 & mindfulness <= 6)
+assignment_3_dataset <- subset(assignment_3_dataset, pain >= 0 & pain <= 10 & mindfulness >= 1 & mindfulness <= 6)
 range(assignment_3_dataset$pain) # Checking if we were successful
 range(assignment_3_dataset$mindfulness) # Checking if we were successful
+
+# Making the corrected scatter plot for our exploratory data analysis
+ggplot(assignment_3_dataset, aes(x = age, y = pain, color = sex)) +
+  geom_count(alpha=0.5) + # Adjust transparency, to see overlapping points
+  labs(x = "Age", y = "Pain", color = "Sex") +
+  ggtitle("Data cleaned Scatter Plot: Age vs. Pain with Sex") +
+  scale_y_continuous(breaks = seq(0, 10), limits = c(0, 10)) + # Adjust y scale to see our full pain measurement scale
+  xlim(0, 100) # Adjust x scale to better understand the age of our control group
+  
 ```
 
 ### Model diagnostics
@@ -202,7 +220,7 @@ Multicollinearity assumption
 
 ```{r}
 # Calculate VIF
-vif(updated_complex_model) # Now cortisol_serum is reduced to 1.533348  
+vif(updated_complex_model) # Now cortisol_serum vif is 1.533348, the multicollinearity was reduced.  
 ```
 
 ## Model comparison
@@ -210,7 +228,7 @@ vif(updated_complex_model) # Now cortisol_serum is reduced to 1.533348
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
 ```{r}
-
+simple_model <- lm(pain ~ age + sex, data = assignment_3_dataset) 
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
