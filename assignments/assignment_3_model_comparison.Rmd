@@ -228,13 +228,73 @@ vif(updated_complex_model) # Now cortisol_serum vif is 1.533348, the multicollin
 Create the simple model and get the results of the model that needs to be reported based on the What to report section.
 
 ```{r}
-simple_model <- lm(pain ~ age + sex, data = assignment_3_dataset) 
+simple_model <- lm(pain ~ age + sex, data = assignment_3_dataset)
+
+# Extract model summary
+model_summary <- summary(simple_model)
+
+# Extract adjusted R-squared
+adj_r_squared <- model_summary$adj.r.squared
+
+# Extract F-statistic, degrees of freedom, and p-value
+f_value <- model_summary$fstatistic[1]
+df_model <- model_summary$fstatistic[2]
+df_residual <- model_summary$fstatistic[3]
+p_value <- pf(f_value, df_model, df_residual, lower.tail = FALSE)
+
+# Create a table of coefficients
+coefficients_table <- data.frame(
+  Coefficient = coef(simple_model),
+  `95% CI` = confint(simple_model),
+  `Std. Coefficient (Beta)` = coef(simple_model) / sd(assignment_3_dataset$pain),
+  p_value = coef(summary(simple_model))[, "Pr(>|t|)"]
+)
+
+# Print model test statistics
+cat("Adjusted R-squared:", adj_r_squared, "\n")
+cat("F-statistic:", f_value, "\n")
+cat("Model degrees of freedom:", df_model, "\n")
+cat("Residual degrees of freedom:", df_residual, "\n")
+cat("p-value:", p_value, "\n\n")
+
+# Print coefficients table
+print(coefficients_table)
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
 
 ```{r}
+#𝑌 = 𝑏0 + 𝑏1 * age + 𝑏2 * sex + 𝑏3 * STAI_trait + 𝑏4 * pain_cat + 𝑏5 * mindfulness + 𝑏6 * cortisol_serum
 
+# Extract model summary
+model_summary <- summary(updated_complex_model)
+
+# Extract adjusted R-squared
+adj_r_squared <- model_summary$adj.r.squared
+
+# Extract F-statistic, degrees of freedom, and p-value
+f_value <- model_summary$fstatistic[1]
+df_model <- model_summary$fstatistic[2]
+df_residual <- model_summary$fstatistic[3]
+p_value <- pf(f_value, df_model, df_residual, lower.tail = FALSE)
+
+# Create a table of coefficients
+coefficients_table <- data.frame(
+  Coefficient = coef(updated_complex_model),
+  `95% CI` = confint(updated_complex_model),
+  `Std. Coefficient (Beta)` = coef(updated_complex_model) / sd(assignment_3_dataset$pain),
+  p_value = coef(summary(updated_complex_model))[, "Pr(>|t|)"]
+)
+
+# Print model test statistics
+cat("Adjusted R-squared:", adj_r_squared, "\n")
+cat("F-statistic:", f_value, "\n")
+cat("Model degrees of freedom:", df_model, "\n")
+cat("Residual degrees of freedom:", df_residual, "\n")
+cat("p-value:", p_value, "\n\n")
+
+# Print coefficients table
+print(coefficients_table)
 ```
 
 Compare the two models.
