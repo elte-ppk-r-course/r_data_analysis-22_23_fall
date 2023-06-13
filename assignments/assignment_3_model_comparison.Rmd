@@ -59,7 +59,9 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
-
+library(readxl) # Read every package
+library(dplyr)
+assignment_3_dataset <- read_xlsx("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_3_dataset.xlsx") # Read the dataset
 ```
 
 ## Data and model diagnostics 
@@ -69,7 +71,19 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 Run an exploratory data analysis (EDA) to investigate the dataset.
 
 ```{r}
-
+nrow(assignment_3_dataset) # We should have 160 participants according to the text
+assignment_3_dataset$sex <- factor(assignment_3_dataset$sex) # Setting the sex variable to factor
+levels(assignment_3_dataset$sex) # Checking the levels, the output indicates there is a coding error (woman+females)
+range(assignment_3_dataset$pain) # Should be between 1-10, the output indicates there is a coding error
+range(assignment_3_dataset$age) #
+range(assignment_3_dataset$STAI_trait) # Should be between 20 and 80, output indicates ranges are correct
+range(assignment_3_dataset$pain_cat) # Should be between 0-52, the output indicates ranges are correct
+range(assignment_3_dataset$cortisol_serum)
+range(assignment_3_dataset$cortisol_saliva)
+range(assignment_3_dataset$mindfulness) # Should be between 1-6, the output indicates there is a coding error
+range(assignment_3_dataset$weight)
+range(assignment_3_dataset$IQ)
+range(assignment_3_dataset$household_income)
 ```
 
 #### Correct coding errors
@@ -77,7 +91,13 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
-
+assignment_3_dataset <- assignment_3_dataset %>% # Changing all female to woman in the dataset
+  mutate(sex = recode(sex, "woman" = "female"))
+levels(assignment_3_dataset$sex) # Checking if we were successful
+# Filter the dataset from the range coding errors
+assignment_3_dataset <- subset(assignment_3_dataset, pain >= 1 & pain <= 10 & mindfulness >= 1 & mindfulness <= 6)
+range(assignment_3_dataset$pain) # Checking if we were successful
+range(assignment_3_dataset$mindfulness) # Checking if we were successful
 ```
 
 ### Model diagnostics
