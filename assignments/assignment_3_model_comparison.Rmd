@@ -267,19 +267,19 @@ Create the more complex model based on the results of the model diagnostics. Als
 #𝑌 = 𝑏0 + 𝑏1 * age + 𝑏2 * sex + 𝑏3 * STAI_trait + 𝑏4 * pain_cat + 𝑏5 * mindfulness + 𝑏6 * cortisol_serum
 
 # Extract model summary
-model_summary <- summary(updated_complex_model)
+model_summary2 <- summary(updated_complex_model)
 
 # Extract adjusted R-squared
-adj_r_squared <- model_summary$adj.r.squared
+adj_r_squared2 <- model_summary2$adj.r.squared
 
 # Extract F-statistic, degrees of freedom, and p-value
-f_value <- model_summary$fstatistic[1]
-df_model <- model_summary$fstatistic[2]
-df_residual <- model_summary$fstatistic[3]
-p_value <- pf(f_value, df_model, df_residual, lower.tail = FALSE)
+f_value2 <- model_summary2$fstatistic[1]
+df_model2 <- model_summary2$fstatistic[2]
+df_residual2 <- model_summary2$fstatistic[3]
+p_value2 <- pf(f_value2, df_model2, df_residual2, lower.tail = FALSE)
 
 # Create a table of coefficients
-coefficients_table <- data.frame(
+coefficients_table2 <- data.frame(
   Coefficient = coef(updated_complex_model),
   `95% CI` = confint(updated_complex_model),
   `Std. Coefficient (Beta)` = coef(updated_complex_model) / sd(assignment_3_dataset$pain),
@@ -287,14 +287,14 @@ coefficients_table <- data.frame(
 )
 
 # Print model test statistics
-cat("Adjusted R-squared:", adj_r_squared, "\n")
-cat("F-statistic:", f_value, "\n")
-cat("Model degrees of freedom:", df_model, "\n")
-cat("Residual degrees of freedom:", df_residual, "\n")
-cat("p-value:", p_value, "\n\n")
+cat("Adjusted R-squared:", adj_r_squared2, "\n")
+cat("F-statistic:", f_value2, "\n")
+cat("Model degrees of freedom:", df_model2, "\n")
+cat("Residual degrees of freedom:", df_residual2, "\n")
+cat("p-value:", p_value2, "\n\n")
 
 # Print coefficients table
-print(coefficients_table)
+print(coefficients_table2)
 ```
 
 Compare the two models.
