@@ -1,6 +1,6 @@
 ---
 title: "Assignment 6: Logistic regression"
-author: "Marton Kovacs / Zoltan Kekecs"
+author: "Bela Szlovicsak"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -9,6 +9,9 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(haven)
+library(broom)
+library(corrr)
 ```
 
 # Background story
@@ -71,60 +74,173 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
-
+raw_data <- read_sav(here::here("data/assignment_6_dataset.sav"))
 ```
 
 ## EDA
 
+Check if there are NAs, and how many in the different variables. Visualise Age distribution of the survivors and the dead. See if ticket price has an effect on survival rate. Do the same for sex, spouses and children.
 ```{r}
+raw_data %>% 
+  filter(is.na(Survived))
 
+raw_data %>% 
+  filter(is.na(Age))
+
+
+summary(raw_data)
+unique(raw_data$Sex)
+
+ggplot(raw_data,
+       aes(Age)) +
+  geom_histogram(bins = 10) +
+  facet_wrap(~Survived)
+
+raw_data %>% 
+ filter(Fare != 0) %>% 
+  ggplot(aes(log10(Fare), fill = Survived, group = Survived)) +
+  geom_histogram(position = "fill", bins = 8)
+#It seems that paying more resoulted in better chances of survival
+
+table(raw_data$Sex, raw_data$Survived)
+#It seems that women had better chances of survival than men
+
+table(raw_data$SibSp, raw_data$Survived)
+#It seems that number of Spouses/Siblings present could affect survival chances.
+
+table(raw_data$Parch, raw_data$Survived)
+#It seems that having parent/children present could improve the chances of surival
 ```
 
 ## Clean the data
 
-```{r}
+Based on the text romm number is irrelevant but the fact that someone has a room or not might be useful. PassengerId, Name and Ticket (ID) does not provide valuable information about the data, therefore I will remove these variables. Because Age could be a useful predictor I will replace the NAs in Age with the avarage Age. Some Fares are equal to 0, but to deal with the huge differences in fares i will use a logarithmic scale and add a small number to the Fares to be able to compute their logarithm.
 
+```{r}
+avg_Age <- mean(raw_data$Age, na.rm = TRUE)
+
+titanic_data <- raw_data %>%
+  filter(Embarked != "") %>% 
+  select(-c(PassengerId, Name, Ticket)) %>% 
+  mutate(Sex = as.factor(Sex),
+         Fare = Fare + .01,
+         Age = replace_na(Age, avg_Age),
+         Cabin = ifelse(Cabin == "", 0, 1),
+         Embarked = as.factor(Embarked))
 ```
 
 ## Creating a datatable for Sue, Kate, and Leonardo
+Create a Date Frame, two rows for Sue and two for Kate. Spouses/Parents increase by one the second time to represent the hypothetical presence of Leonardo.
 
 ```{r}
+new_dat <- as.data.frame(bind_cols(Pclass = c(3,3,3,3),
+                     Sex = c("female", "female", "female",
+                             "female"),
+                     Age = c(4, 20, 4, 20), 
+                     SibSp = c(0, 0, 0, 1), 
+                     Parch = c(1, 0, 2, 0), 
+                     Fare = c(8.01,8.01 ,8.01, 8.01),
+                     Cabin = c(0, 0, 0, 0),
+                     Embarked = c("S", "S", "S", "S")
+                     ))
 
+rownames(new_dat) <- c("Kate w/o Leo", "Sue w/o Leo", "Kate w/ Leo", "Sue w/ Leo")
 ```
 
 ## Building the null model
 
 ```{r}
-
+null <- glm(Survived ~ 1, 
+            family = binomial, 
+            data = titanic_data)
 ```
 
 ## Building the model
 
 ```{r}
-
+surv_model <- glm(Survived ~ 
+                    Pclass + Sex + Age + SibSp + Parch 
+                  + I(log10(Fare)) + Cabin + Embarked, 
+                  family = binomial,
+                  data = titanic_data)
 ```
 
-# Check the assumptions
 
-```{r}
-
-```
 
 # Compare the models
+Based on both AIC and Chisquared test, the model is better than the null.
 
 ```{r}
-
+AIC(null)
+AIC(surv_model)
+anova(null, surv_model, test = "Chisq")
 ```
 
-# Calculate odds ratio and confidence interval
+
+# Check Accuracy
+Create a confusion matrix and compute relevant measures. All values are higher than minimum, therefore I will use this model.
 
 ```{r}
+#Get survival chances based on model
+titanic_pred <- predict.glm(surv_model, newdata = NULL, 
+                            type = "response")
+#Convert into predictions
+titanic_pred <- ifelse(titanic_pred >= .5, 1, 0)
 
+conf_mat <- table(titanic_pred, titanic_data$Survived)
+
+Acc <- sum(diag(conf_mat))/sum(conf_mat)
+Spec <- conf_mat[1,1]/sum(conf_mat[,1])
+Sens <- conf_mat[2,2]/sum(conf_mat[,2])
+
+#Confusion matrix and accuracy measures
+conf_mat
+Acc
+Spec
+Sens
+
+#McFadden pseudo-R2
+L1 <- glance(surv_model) %>% 
+  pull(logLik)
+
+L0 <- glance(null) %>% 
+  pull(logLik)
+
+McFadden_R <- 1 - (L1/L0)
+McFadden_R
+```
+
+
+
+# Calculate odds ratio and confidence interval
+The following table contains all the odds ratio estimates, logit coefficients (log_estimate), confidence intervals for the odds ratios, (chi-squared) statistic and p-values for all predictors.
+AIC values are shown along with the null model.
+
+```{r}
+tidy(surv_model, conf.int = TRUE, exponentiate = TRUE) %>%
+  bind_cols(tidy(surv_model) %>% 
+              mutate(log_estimate = estimate) %>% 
+              select(log_estimate)) %>% 
+  DT::datatable(
+  extensions = 'FixedColumns',
+  options = list(
+    scrollX = TRUE,
+    fixedColumns = TRUE
+  )
+)
 ```
 
 # Report the results
+The required measures can be observed, our model is better than the null based on AIC values and a Chi-squared test. McFadden R2 is around 35% which is acceptable. Our regression equation is the following:
+
+ln(Odds_Survived) =  3.86 - 0.77* Pclass - 2.70* Sex(Male) - 0.04* Age  - 0.39* SibSp - 0.15* Parch + 0.49* log10(Fare) + 0.65* Cabin - 0.01* EmbarkedQ - 0.34* EmbarkedS
+
+The following is the survival chances of Kate and Sue with and without Leo(nardo) present.
 
 ```{r}
-
+predict.glm(surv_model, 
+            newdata = new_dat, 
+            type = "response")
 ```
 
+Based on this it can be concluded that the survival chances of Kate and Sue would have decreased with Leo present. Therefore he can't be blamed for the tragic death of Sue. Having more relatives present generally reduced the chances of survival. This can probably be connected with the fact that first class passengers the best chances to survive and they generally had less relatives present.

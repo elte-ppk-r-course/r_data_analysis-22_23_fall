@@ -1,6 +1,6 @@
 ---
 title: "Assignment 5: Mixed models"
-author: "Marton Kovacs / Zoltan Kekecs"
+author: "Szlovicsak Bela"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -9,6 +9,10 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(lme4)
+library(haven)
+library(broom)
+library(performance)
 ```
 
 # Introduction
@@ -58,14 +62,39 @@ Compare the model coefficients and the confidence intervals observed in this ass
 Read the datasets used in this assignment. Pay attention to the extensions of the datafiles.
 
 ```{r}
+data_A <- read_sav("~/R_Projects/r_data_analysis-22_23_fall/data/assignment_4_dataset_A.sav")
+
+data_B <- read_sav("~/R_Projects/r_data_analysis-22_23_fall/data/assignment_4_dataset_B.sav")
 
 ```
 
 ## Exploratory data analysis
 
 Run an exploratory data analysis (EDA) to investigate the dataset.
+Using summary to see if any numerical variables are out of limits, the plots help to see if there are any differences in factor names.
 
 ```{r}
+summary(data_A)
+summary(data_B)
+
+data_A %>% 
+  ggplot(aes(
+    age,
+    pain,
+    color = sex
+    )) +
+  geom_point() +
+  facet_wrap(~hospital)
+
+data_B %>% 
+  ggplot(aes(
+    age,
+    pain,
+    color = sex
+    )) +
+  geom_point() +
+  facet_wrap(~hospital)
+
 
 ```
 
@@ -74,6 +103,79 @@ Run an exploratory data analysis (EDA) to investigate the dataset.
 If you find values in the dataset during the EDA, that are not correct based on the provided descriptions of the variables of the dataset please correct them here.
 
 ```{r}
+data_A <-
+  data_A %>% 
+  mutate(sex = as.factor(sex),
+         sex = fct_collapse(sex, male = c("male", "Male")))
+```
+
+## Model building
+
+As per the instructions I will create a mixed effects model with _Hospital_ as a random intercept and using the previously chosen fixed eddects.
+
+```{r}
+model <- lmer(pain ~ sex + 
+                      age +
+                      STAI_trait +
+                      pain_cat +
+                      cortisol_serum +
+                      mindfulness +
+                      (1|hospital),
+              data = data_A)
+
+
+model
 
 ```
 
+Now i will extract the fixed effect estimates, and their confidence intervals and compare those results to the ones found in Assignment 3
+
+```{r}
+#Create a table of coefficients and confidence intervals from an lmer object
+coefs <- coef(summary(model))
+confints <- confint(model)[3:9,]
+
+fix_eff <- 
+    bind_cols(Variable = rownames(coefs),
+            coefs,
+            confints
+      )
+
+#Read the results from the previous Assignment
+linear_model_final <- read_csv("~/R_Projects/r_data_analysis-22_23_fall/data/assignment_3_model.csv")
+
+
+linear_model_final
+fix_eff
+```
+
+#Calculate R^2 values
+
+Let's calculate R squared values without and with the random effects.
+
+```{r}
+r2(model)
+```
+
+#Inspect model performance on test data (Dataset B)
+Use the population level of the random effects to predict the pain of the rest of the patients. Compute the R squared of these values.
+
+
+
+```{r}
+predicted_pain <- predict(model, data_B, re.form = NA)
+true_pain <- data_B %>% pull(pain)
+
+TSS <- var(true_pain)*200
+RSS <- sum((true_pain - predicted_pain)**2)
+
+R2 <- 1-(RSS/TSS)
+
+R2
+```
+
+
+## Discussion
+
+First, the mixed model had quite different estimates for the fixed effects than the previous estimation of them. This probably comes from the fact that we also took group level variation into consideration so the population level effects became different too. Thus the baseline intercept for example became positive, which is in the bounds of the pain variable. Based on the confidence intervals Age became a significant predictor with Mindfulness, while Pain Catastrophising is no longer significant.
+Regarding the R squared values it was possible to observe that the fixed effect could describe more than 30% of the variation of the data, with an increase of 12% together with the random effects of the different Hospitals. The R^2 value regarding the test dataset was between these two values, 35%. This means that even using only the fixed effects to make predictions we can achieve a reasonable description of the data.
