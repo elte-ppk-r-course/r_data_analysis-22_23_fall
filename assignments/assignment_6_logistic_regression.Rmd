@@ -72,6 +72,8 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 
 ```{r}
 library(haven) # Package to load sav files
+library(ggplot2)
+library(dplyr)
 assignment_6_dataset <- read_sav("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_6_dataset.sav") # Read the dataset
 ```
 
@@ -91,12 +93,25 @@ sum(is.na(assignment_6_dataset$Name) | assignment_6_dataset$Name == "") # Checki
 range(assignment_6_dataset$Age, na.rm = TRUE) # Values must be rounded
 sum(is.na(assignment_6_dataset$Age) | assignment_6_dataset$Age == "") # Checking for ageless passengers
 range(assignment_6_dataset$SibSp) 
+sum(is.na(assignment_6_dataset$SibSp) | assignment_6_dataset$SibSp == "") # Checking for missing values
+range(assignment_6_dataset$Parch)
+sum(is.na(assignment_6_dataset$Parch) | assignment_6_dataset$Parch == "") # Checking for missing values
 sum(is.na(assignment_6_dataset$Ticket) | assignment_6_dataset$Ticket == "") # Checking for ticketless passengers
 range(assignment_6_dataset$Fare)
 sum(is.na(assignment_6_dataset$Cabin) | assignment_6_dataset$Cabin == "") # Checking for cabinless passengers
 assignment_6_dataset$Embarked <- factor(assignment_6_dataset$Embarked) # Setting the Embarked variable to factor
 levels(assignment_6_dataset$Embarked) # Should be S or C or Q, there are 2 unknown values
 table(assignment_6_dataset$Embarked)
+
+# Plotting for Sue
+ggplot(assignment_6_dataset, aes(x = Parch, fill = factor(Survived))) + 
+  geom_bar(stat = "count") +
+  labs(x = "Number of parents or children", y = "Number of passengers", fill = "Survived")
+
+# Plotting for Kate
+ggplot(assignment_6_dataset, aes(x = SibSp, fill = factor(Survived))) + 
+  geom_bar(stat = "count") +
+  labs(x = "Number of siblings or spouses", y = "Number of passengers", fill = "Survived")
 ```
 
 ## Clean the data
