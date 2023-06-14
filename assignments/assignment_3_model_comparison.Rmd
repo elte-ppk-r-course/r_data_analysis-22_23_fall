@@ -230,7 +230,7 @@ Create the simple model and get the results of the model that needs to be report
 ```{r}
 simple_model <- lm(pain ~ age + sex, data = assignment_3_dataset)
 
-glance(simple_model)
+glance(simple_model) # Adjusted R squaired = 0.0685 AIC = 572
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
@@ -238,12 +238,38 @@ Create the more complex model based on the results of the model diagnostics. Als
 ```{r}
 #𝑌 = 𝑏0 + 𝑏1 * age + 𝑏2 * sex + 𝑏3 * STAI_trait + 𝑏4 * pain_cat + 𝑏5 * mindfulness + 𝑏6 * cortisol_serum
 
-glance(updated_complex_model)
+glance(updated_complex_model) # Adjusted R squaired = 0.312 AIC = 529
 ```
 
 Compare the two models.
 
 ```{r}
-anova(simple_model,updated_complex_model)
+anova(simple_model,updated_complex_model) # F-statistic = 14,695 p-value = 3.673e-10
 ```
+## Discussion
 
+Simple Model:
+
+Adjusted R-squared: 0.0685
+The simple model explains approximately 6.85% of the variability in the pain variable.
+
+AIC: 572
+The Akaike Information Criterion (AIC) for the simple model is 572 A lower AIC value suggests a better-fitting model, considering the trade-off between model complexity and goodness of fit.
+
+Updated Complex Model
+
+Adjusted R-squared: 0.312
+The updated complex model explains approximately 31.2% of the variability in the pain variable. This indicates that the complex model provides a better fit to the data compared to the simple model.
+
+AIC: 529
+The AIC for the updated complex model is 529 which is lower than the AIC of the simple model. This suggests that the updated complex model is a better fit for the data.
+
+Likelihood Ratio Test:
+
+F-statistic: 14.695
+The likelihood ratio test compares the fit of the two models. The F-statistic of 14.695 indicates that there is a significant difference in the fit between the two models.
+
+p-value: 3.673e-10
+The p-value associated with the likelihood ratio test is very small (close to zero), indicating strong evidence against the null hypothesis that the simple model is sufficient. This suggests that the complex model provides a significantly better fit to the data.
+
+Therefore, the updated complex model explains more variance in the pain variable, has a lower AIC, and provides a significantly better fit to the data compared to the simple model, as supported by the likelihood ratio test.
