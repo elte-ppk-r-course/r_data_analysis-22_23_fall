@@ -194,11 +194,23 @@ predicted_probs <- predict(model, type = "response")
 # Convert predicted probabilities to predicted classes (survivor or dead)
 predictions <- ifelse(predicted_probs > 0.5, "survivor", "dead")
 
-# Calculate the accuracy
-accuracy <- mean(predictions == assignment_6_dataset$Survived) * 100
+# Create a subset of the actual values to match the length of predictions
+actual <- assignment_6_dataset$Survived[1:length(predictions)]
 
-# Print the accuracy
-print(paste("Accuracy:", accuracy, "%"))
+# Create a confusion matrix
+confusion <- table(actual, predictions)
+
+# Print the confusion matrix
+print(confusion)
+
+TP <- confusion[1, 1]  # True Positives
+TN <- confusion[2, 2]  # True Negatives
+FP <- confusion[1, 2]  # False Positives
+FN <- confusion[2, 1]  # False Negatives
+
+accuracy <- (TP + TN) / (TP + TN + FP + FN)
+accuracy_percentage <- accuracy * 100
+paste0(accuracy_percentage, "%")
 
 ```
 
