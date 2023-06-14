@@ -78,7 +78,6 @@ library(tibble)
 library(lme4)
 library(car)
 library(DHARMa) # For checking outliers
-library(stats)
 assignment_6_dataset <- read_sav("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_6_dataset.sav") # Read the dataset
 ```
 
@@ -177,7 +176,7 @@ Sue_Kate_data_without_Leonardo <- tibble(
 ## Building the null model
 
 ```{r}
-null_model <- glm(Survived ~ 1, data = assignment_6_dataset, family = "binomial")
+null_model <- glmer(Survived ~ 1 + (1 | Pclass) + (1 | Sex) + (1 | Fare) + (1 | Embarked) , data = assignment_6_dataset, family = binomial) # I removed the same random effects which i took out from the final model through feature engineering 
 
 
 
@@ -234,12 +233,36 @@ plot(residuals) # Although we have significant distributional deviance, the disp
 # Compare the models
 
 ```{r}
-summary(null_model) # AIC 1184,8 
+summary(null_model) 
 
-summary(model) #AIC 831,4
+summary(model) 
 
-anova(null_model, model, test = "Chisq")
+anova(null_model, model, test = "Chi") 
 
+# The null model has an AIC of 829.68, while the model with fixed effects has an AIC of 831.38. The likelihood ratio test compares these two models and yields a test statistic of 2.2994, with 2 degrees of freedom and a p-value of 0.3167. This suggests that the addition of fixed effects in the model does not significantly improve the fit compared to the null model.
+
+# Calculate McFadden's R-squared
+mcfadden_r2 <- 1 - (logLik(model) / logLik(null_model))
+
+# Print the result
+cat("McFadden's R-squared:", mcfadden_r2, "\n") # McFadden's R-squared 0,002805187
+
+# McFadden's R-squared ranges from 0 to 1, where 0 indicates that the model does not explain any of the variance beyond the null model, and 1 indicates a perfect fit. In this case, the calculated McFadden's R-squared value of 0.002805187 suggests that the model explains a very small amount of the variance beyond the null model. This indicates that the variables SibSp and Parch included in the model may not be strongly associated with the outcome. This could mean strong evidence that the presence of Leonardo did not matter on the ship, because it had not any significance on the death of Sue.
+
+# Calculate accuracy for predicting survivors
+survivor_accuracy <- TP / (TP + FN)
+survivor_accuracy_percentage <- survivor_accuracy * 100
+
+# Calculate accuracy for predicting deaths
+death_accuracy <- TN / (TN + FP)
+death_accuracy_percentage <- death_accuracy * 100
+
+# Print the accuracies
+cat("Overall Accuracy:", accuracy_percentage, "%\n") # 87,064 % overall accuracy
+cat("Accuracy for Predicting Survivors:", survivor_accuracy_percentage, "%\n") # 86,532 % predicting survivors
+cat("Accuracy for Predicting Deaths:", death_accuracy_percentage, "%\n") # 88,136 % predicting deaths
+
+# It seems our model is quite accurate
 ```
 
 # Calculate odds ratio and confidence interval
