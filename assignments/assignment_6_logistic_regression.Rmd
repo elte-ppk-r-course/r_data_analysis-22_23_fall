@@ -9,6 +9,7 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(DHARMa) # For checking outliers
 ```
 
 # Background story
@@ -184,7 +185,7 @@ null_model <- glm(Survived ~ 1, data = assignment_6_dataset, family = "binomial"
 ## Building the model
 
 ```{r}
-model <- glmer(Survived ~ SibSp + Parch + (1 | Pclass) + (1 | Sex) + (1 | Cabin) + (1 | Fare) + (1 | Embarked), # I excluded Passengerid and Ticket name. The other variables are added as random effects.
+model <- glmer(Survived ~ SibSp + Parch + (1 | Pclass) + (1 | Sex) + (1 | Fare) + (1 | Embarked) , # I excluded Passengerid and Ticket name. The other variables are added as random effects. Age and Cabin were removed because of feature engineering. See bottom of the cell for explanation. 
                data = assignment_6_dataset,
                family = binomial())
 
@@ -211,6 +212,16 @@ FN <- confusion[2, 1]  # False Negatives
 accuracy <- (TP + TN) / (TP + TN + FP + FN)
 accuracy_percentage <- accuracy * 100
 paste0(accuracy_percentage, "%")
+
+# I removed age as a random effect in feature engineering and the model's accuracy went up to 86,5% from 54%
+# I also excluded Cabin as a random effect and the accuracy went up to 87,064 %
+# This is higher than 74% so this will be my final prediction model
+
+# Generate residuals using DHARMa for outlier check
+residuals <- simulateResiduals(model)
+
+# Plot the residuals
+plot(residuals) # Although we have significant distributional deviance, the dispersion test is non-significant and the outlier test shows no potential outlier. 
 
 ```
 
