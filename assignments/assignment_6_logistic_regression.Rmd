@@ -74,6 +74,7 @@ Read the dataset used in this assignment. Pay attention to the extension of the 
 library(haven) # Package to load sav files
 library(ggplot2)
 library(dplyr)
+library(tibble)
 assignment_6_dataset <- read_sav("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_6_dataset.sav") # Read the dataset
 ```
 
@@ -103,12 +104,12 @@ assignment_6_dataset$Embarked <- factor(assignment_6_dataset$Embarked) # Setting
 levels(assignment_6_dataset$Embarked) # Should be S or C or Q, there are 2 unknown values
 table(assignment_6_dataset$Embarked)
 
-# Plotting for Sue
+# Plotting for parents or children (Sue's case)
 ggplot(assignment_6_dataset, aes(x = Parch, fill = factor(Survived))) + 
   geom_bar(stat = "count") +
   labs(x = "Number of parents or children", y = "Number of passengers", fill = "Survived")
 
-# Plotting for Kate
+# Plotting for siblings or spouses (Kate's case)
 ggplot(assignment_6_dataset, aes(x = SibSp, fill = factor(Survived))) + 
   geom_bar(stat = "count") +
   labs(x = "Number of siblings or spouses", y = "Number of passengers", fill = "Survived")
@@ -117,16 +118,37 @@ ggplot(assignment_6_dataset, aes(x = SibSp, fill = factor(Survived))) +
 ## Clean the data
 
 ```{r}
-filtered_rounded_dataset <- assignment_6_dataset %>% # We round
-  filter(Embarked != "") %>% # We filter
-  mutate(Age = ifelse(!is.na(Age), round(Age), NA))
+assignment_6_dataset <- assignment_6_dataset %>%
+  filter(Embarked != "", !is.na(Embarked)) %>%
+  mutate(Age = ifelse(!is.na(Age), round(Age), NA), # We will round the Age variables
+         Cabin = ifelse(Cabin != "", "Cabin", "No cabin"), # This is for better data handling 
+         Embarked = factor(Embarked, levels = c("C", "Q", "S"))) # We will drop the data with those missing values
 
+# We will check our data cleaning process
+range(assignment_6_dataset$Age, na.rm = TRUE)
+levels(assignment_6_dataset$Embarked)
+sum(is.na(assignment_6_dataset$Cabin) | assignment_6_dataset$Cabin == "")
+sum(assignment_6_dataset$Cabin == "No cabin") # It should be 687
 ```
 
 ## Creating a datatable for Sue, Kate, and Leonardo
 
 ```{r}
-
+# Create a data table for Sue and Kate
+Sue_Kate_data <- tibble(
+  Passengerid = c(892, 893), # This is imaginary i will probably drop this
+  Survived = c("dead", "survivor"),
+  Pclass = c(3, 3),
+  Name = c("Sue", "Kate"),
+  Sex = c("female","female"),
+  Age = c(20, 4),
+  SibSp = c(0,0),
+  Parch = c (1,1),
+  Ticket = c (001,002), # This is imaginary i will probably drop this
+  Fare = c(8, 8),
+  Cabin = c("no cabin", "no cabin"),
+  Embarked = c("S", "S")
+)
 ```
 
 ## Building the null model
