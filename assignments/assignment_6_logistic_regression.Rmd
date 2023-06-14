@@ -217,23 +217,27 @@ paste0(accuracy_percentage, "%")
 # I also excluded Cabin as a random effect and the accuracy went up to 87,064 %
 # This is higher than 74% so this will be my final prediction model
 
-# Generate residuals using DHARMa for outlier check
-residuals <- simulateResiduals(model)
-
-# Plot the residuals
-plot(residuals) # Although we have significant distributional deviance, the dispersion test is non-significant and the outlier test shows no potential outlier. 
 
 ```
 
 # Check the assumptions
 
 ```{r}
+# Generate residuals using DHARMa for outlier check
+residuals <- simulateResiduals(model)
 
+# Plot the residuals
+plot(residuals) # Although we have significant distributional deviance, the dispersion test is non-significant and the outlier test shows no potential outlier. 
 ```
 
 # Compare the models
 
 ```{r}
+summary(null_model) # AIC 1184,8 
+
+summary(model) #AIC 831,4
+
+anova(null_model, model, test = "Chisq")
 
 ```
 
