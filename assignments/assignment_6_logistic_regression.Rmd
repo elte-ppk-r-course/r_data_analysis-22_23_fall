@@ -1,6 +1,6 @@
 ---
 title: "Assignment 6: Logistic regression"
-author: "Marton Kovacs / Zoltan Kekecs"
+author: "Dávid Winkler"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -71,13 +71,32 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
-
+library(haven) # Package to load sav files
+assignment_6_dataset <- read_sav("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_6_dataset.sav") # Read the dataset
 ```
 
 ## EDA
 
 ```{r}
-
+assignment_6_dataset$Sex <- factor(assignment_6_dataset$Sex) # Setting the Sex variable to factor
+levels(assignment_6_dataset$Sex) # Should be male or female
+table(assignment_6_dataset$Sex)
+range(assignment_6_dataset$Survived) # Should be between 0-1
+assignment_6_dataset$Survived[assignment_6_dataset$Survived == 0] <- "dead"
+assignment_6_dataset$Survived[assignment_6_dataset$Survived == 1] <- "survivor"
+assignment_6_dataset$Survived <- factor(assignment_6_dataset$Survived) # We change this column for better data handling
+table(assignment_6_dataset$Survived) # 549 dead 342 survivor
+range(assignment_6_dataset$Pclass) # Should be between 1-3
+sum(is.na(assignment_6_dataset$Name) | assignment_6_dataset$Name == "") # Checking for nameless passengers
+range(assignment_6_dataset$Age, na.rm = TRUE) # Values must be rounded
+sum(is.na(assignment_6_dataset$Age) | assignment_6_dataset$Age == "") # Checking for ageless passengers
+range(assignment_6_dataset$SibSp) 
+sum(is.na(assignment_6_dataset$Ticket) | assignment_6_dataset$Ticket == "") # Checking for ticketless passengers
+range(assignment_6_dataset$Fare)
+sum(is.na(assignment_6_dataset$Cabin) | assignment_6_dataset$Cabin == "") # Checking for cabinless passengers
+assignment_6_dataset$Embarked <- factor(assignment_6_dataset$Embarked) # Setting the Embarked variable to factor
+levels(assignment_6_dataset$Embarked) # Should be S or C or Q, there are 2 unknown values
+table(assignment_6_dataset$Embarked)
 ```
 
 ## Clean the data
