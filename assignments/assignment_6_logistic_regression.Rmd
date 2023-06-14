@@ -117,6 +117,9 @@ ggplot(assignment_6_dataset, aes(x = SibSp, fill = factor(Survived))) +
 ## Clean the data
 
 ```{r}
+filtered_rounded_dataset <- assignment_6_dataset %>% # We round
+  filter(Embarked != "") %>% # We filter
+  mutate(Age = ifelse(!is.na(Age), round(Age), NA))
 
 ```
 
