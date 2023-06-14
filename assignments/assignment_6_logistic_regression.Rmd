@@ -9,7 +9,6 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(DHARMa) # For checking outliers
 ```
 
 # Background story
@@ -78,6 +77,8 @@ library(dplyr)
 library(tibble)
 library(lme4)
 library(car)
+library(DHARMa) # For checking outliers
+library(stats)
 assignment_6_dataset <- read_sav("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_6_dataset.sav") # Read the dataset
 ```
 
