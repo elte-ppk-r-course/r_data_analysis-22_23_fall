@@ -78,6 +78,8 @@ library(tibble)
 library(lme4)
 library(car)
 library(DHARMa) # For checking outliers
+
+
 assignment_6_dataset <- read_sav("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_6_dataset.sav") # Read the dataset
 ```
 
@@ -237,8 +239,9 @@ summary(null_model)
 
 summary(model) 
 
-anova(null_model, model, test = "Chi") 
+anova_result <- anova(null_model, model, test = "Chi") 
 
+print(anova_result)
 # The null model has an AIC of 829.68, while the model with fixed effects has an AIC of 831.38. The likelihood ratio test compares these two models and yields a test statistic of 2.2994, with 2 degrees of freedom and a p-value of 0.3167. This suggests that the addition of fixed effects in the model does not significantly improve the fit compared to the null model.
 
 # Calculate McFadden's R-squared
@@ -268,6 +271,77 @@ cat("Accuracy for Predicting Deaths:", death_accuracy_percentage, "%\n") # 88,13
 # Calculate odds ratio and confidence interval
 
 ```{r}
+# Extract the fixed effects coefficients
+fixed_effects <- fixef(model)
+
+# Create a data frame with the coefficients
+coefficients_table <- data.frame(
+  Predictor = names(fixed_effects),
+  Coefficient = fixed_effects
+)
+
+# Print the coefficients table
+print(coefficients_table)
+
+# For the predictor "SibSp" to calculate the odds ratio, we exponentiate the coefficient:
+
+Coefficient_SibSp <- -0.17522110
+
+Odds_ratio_SibSp <- exp(Coefficient_SibSp)
+
+print(Odds_ratio_SibSp)
+
+# For the predictor "Parch" to calculate the odds ratio, we exponentiate the coefficient:
+
+Coefficient_Parch <- -0.05946269
+
+Odds_ratio_Parch <- exp(Coefficient_Parch)
+
+print(Odds_ratio_Parch)
+
+# For SibSp
+SE_SibSp <- 0.12498
+CI_SibSp <- c(Odds_ratio_SibSp - (1.96 * SE_SibSp), Odds_ratio_SibSp + (1.96 * SE_SibSp))
+
+# For Parch
+SE_Parch <- 0.13844
+CI_Parch <- c(Odds_ratio_Parch - (1.96 * SE_Parch), Odds_ratio_Parch + (1.96 * SE_Parch))
+
+# Display the confidence intervals
+CI_SibSp # 0.5943106 1.0842322
+CI_Parch # 0.6709283 1.2136131
+
+# Extract Chi^2 test statistics and p-values from the anova_result
+chi_squared <- anova_result$Chi
+p_value <- anova_result$Pr
+
+# Calculate AIC for the two models
+aic_model1 <- AIC(null_model)
+aic_model2 <- AIC(model)
+
+# Create a data frame with the coefficients
+final_coefficients_table <- data.frame(
+  Predictor = c("SibSp", "Parch"),
+  Coefficient = c(Coefficient_SibSp, Coefficient_Parch),
+  Odds_ratio = c(Odds_ratio_SibSp, Odds_ratio_Parch),
+  CI_low = c("0.5943106", "0.6709283"),
+  CI_high = c("1.0842322","1.2136131")
+)
+
+# Print the coefficients table
+print(final_coefficients_table)
+
+
+# Create a data frame with chi-squared test statistics, p-values, and AIC values
+results_table <- data.frame(
+  Model = c("Null Model", "Model"),
+  Chi_Squared = c(chi_squared),
+  P_Value = c(p_value),
+  AIC = c(aic_model1, aic_model2)
+)
+
+# Print the results table
+print(results_table)
 
 ```
 
