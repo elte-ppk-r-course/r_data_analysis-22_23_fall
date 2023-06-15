@@ -358,7 +358,23 @@ print(coefficients_table_fixed)
 
 # The predictors in the model can be ranked based on influence in this order: 1.SibSp has a coefficient of -0.17522110, indicating a negative influence on the outcome. It suggests that an increase in the number of siblings/spouses aboard is associated with a decrease in the log-odds of survival. 2. Parch has a coefficient of -0.05946269, also indicating a negative influence on the outcome. It suggests that an increase in the number of parents/children aboard is associated with a decrease in the log-odds of survival.
 
- 
+# The regression equation for survival: logit(p) = 0.40718 - 0.17522SibSp - 0.05946Parch + u(random effects) 
 
+# Sue and Kate without Leonardo SibSp= 0 Parch= 1
+# logit(p) = 0.40718 - 0.17522 * 0 - 0.05946 * 1 = 0.40718 - 0 - 0.05946 = 0.34772
+# p = exp(0.34772) / (1 + exp(0.34772))  = 0.5862 58,62% probability of survival
+
+
+
+# Sue with Leonardo SibSp= 1 Parch= 1
+# logit(p) = 0.40718 - 0.17522 * 1 - 0.05946 * 1 = 0.40718 - 0.17522 - 0.05946 = 0.17250
+# p = exp(0.1725) / (1 + exp(0.1725)) = 0.5432 54,32 % probability of survival
+
+
+# Kate with Leonardo SibSp= 0 Parch= 2
+# logit(p) = 0.40718 - 0.17522 * 0 - 0.05946 * 2 = 0.40718 - 0 - 0.11892 = 0.28826 
+# p = exp(0.28826) / (1 + exp(0.28826)) = 0.5715 57,15 % probability of survival
+
+# Kate statements are not right, we have evidence, that the presence of Leonardo would have decreased their chances of survival by a small amount.
 ```
 
