@@ -348,6 +348,17 @@ print(results_table)
 # Report the results
 
 ```{r}
+# Create a data frame for the fixed effects coefficients
+coefficients_table_fixed <- data.frame(
+  Coefficient = fixed_effects,
+  Type = "Fixed"
+)
+
+print(coefficients_table_fixed)
+
+# The predictors in the model can be ranked based on influence in this order: 1.SibSp has a coefficient of -0.17522110, indicating a negative influence on the outcome. It suggests that an increase in the number of siblings/spouses aboard is associated with a decrease in the log-odds of survival. 2. Parch has a coefficient of -0.05946269, also indicating a negative influence on the outcome. It suggests that an increase in the number of parents/children aboard is associated with a decrease in the log-odds of survival.
+
+ 
 
 ```
 
