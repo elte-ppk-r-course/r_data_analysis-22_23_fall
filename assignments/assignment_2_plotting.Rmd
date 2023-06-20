@@ -123,8 +123,8 @@ ggplot(data = aggregated_data2, aes(x = Walk, y = Bike, color = state_region, la
   geom_point(size = 2) +
   geom_text(color = "Black", check_overlap = TRUE) + # Disable overleaping of state_abbs (monitor size matters)
   labs(title = "Title number of people walking vs. biking to work in each USA state", # Setting title and labels
-       x = "Number of ppl biking to work (log N)",
-       y = "Number of ppl walking to work (log N)",
+       x = "Number of ppl walking to work (log N)",
+       y = "Number of ppl biking to work (log N)",
        color = "State region") + 
   scale_x_log10(labels = comma_format()) + # Log transformations and coma formats
   scale_y_log10(labels = comma_format()) +
