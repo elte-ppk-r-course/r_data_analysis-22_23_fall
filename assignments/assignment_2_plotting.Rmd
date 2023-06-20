@@ -57,7 +57,7 @@ filtered_data <- filtered_data %>%
 # Create the bar plot with flipped coordinates
 ggplot(filtered_data, aes(x = peak_name, fill = season)) +
   geom_bar() +
-  labs(x="", y = "Number of Expeditions") + # Setting labels and title
+  labs(x="", y = "Number of expeditions") + # Setting labels and title
    ggtitle("The 15 most popular peaks stacked by season of expedition") +
   scale_fill_viridis(discrete = TRUE) + # Setting color
   theme_light() + # Setting light theme
