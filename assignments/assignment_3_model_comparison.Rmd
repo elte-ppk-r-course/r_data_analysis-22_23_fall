@@ -89,11 +89,11 @@ range(assignment_3_dataset$weight)
 range(assignment_3_dataset$IQ)
 range(assignment_3_dataset$household_income)
 
-
-ggplot(assignment_3_dataset, aes(x = age, y = pain, color = sex)) + # Creating a scatter plot
-  geom_point() +
+# Creating a scatter plot showing the relationship between pain, age and sex
+ggplot(assignment_3_dataset, aes(x = age, y = pain, color = sex)) +
+  geom_jitter() +  # Replace geom_point() with geom_jitter() to show every patient on the plot with random noise
   labs(x = "Age", y = "Pain", color = "Sex") +
-  ggtitle("Scatter Plot: Age vs. Pain with Sex") # As we have found earlier, we have some problems with the dataset
+  ggtitle("Scatter Plot: Age vs. Pain with Sex")
 
 ```
 
