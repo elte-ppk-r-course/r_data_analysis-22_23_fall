@@ -1,6 +1,6 @@
 ---
 title: "Assignment 6: Logistic regression"
-author: "Marton Kovacs / Zoltan Kekecs"
+author: "Dávid Winkler"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -71,60 +71,310 @@ In your discussion of the findings, briefly interpret the results of the above a
 Read the dataset used in this assignment. Pay attention to the extension of the datafile.
 
 ```{r}
+library(haven) # Package to load sav files
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(lme4)
+library(car)
+library(DHARMa) # For checking outliers
 
+
+assignment_6_dataset <- read_sav("C:/Users/Dáci/Documents/GitHub/r_data_analysis-22_23_fall/data/assignment_6_dataset.sav") # Read the dataset
 ```
 
 ## EDA
 
 ```{r}
+assignment_6_dataset$Sex <- factor(assignment_6_dataset$Sex) # Setting the Sex variable to factor
+levels(assignment_6_dataset$Sex) # Should be male or female
+table(assignment_6_dataset$Sex)
+range(assignment_6_dataset$Survived) # Should be between 0-1
+assignment_6_dataset$Survived[assignment_6_dataset$Survived == 0] <- "dead"
+assignment_6_dataset$Survived[assignment_6_dataset$Survived == 1] <- "survivor"
+assignment_6_dataset$Survived <- factor(assignment_6_dataset$Survived) # We change this column for factors
+table(assignment_6_dataset$Survived) # 549 dead 342 survivor
+range(assignment_6_dataset$Pclass) # Should be between 1-3
+assignment_6_dataset$Pclass <- factor(assignment_6_dataset$Pclass) # This should be a factor variable
+sum(is.na(assignment_6_dataset$Name) | assignment_6_dataset$Name == "") # Checking for nameless passengers
+range(assignment_6_dataset$Age, na.rm = TRUE) # Values must be rounded
+sum(is.na(assignment_6_dataset$Age) | assignment_6_dataset$Age == "") # Checking for ageless passengers
+range(assignment_6_dataset$SibSp) 
+sum(is.na(assignment_6_dataset$SibSp) | assignment_6_dataset$SibSp == "") # Checking for missing values
+range(assignment_6_dataset$Parch)
+sum(is.na(assignment_6_dataset$Parch) | assignment_6_dataset$Parch == "") # Checking for missing values
+sum(is.na(assignment_6_dataset$Ticket) | assignment_6_dataset$Ticket == "") # Checking for ticketless passengers
+range(assignment_6_dataset$Fare)
+sum(is.na(assignment_6_dataset$Cabin) | assignment_6_dataset$Cabin == "") # Checking for cabinless passengers
+assignment_6_dataset$Embarked <- factor(assignment_6_dataset$Embarked) # Setting the Embarked variable to factor
+levels(assignment_6_dataset$Embarked) # Should be S or C or Q, there are 2 unknown values
+table(assignment_6_dataset$Embarked)
 
+# Plotting for parents or children (Sue's case)
+ggplot(assignment_6_dataset, aes(x = Parch, fill = factor(Survived))) + 
+  geom_bar(stat = "count") +
+  labs(x = "Number of parents or children", y = "Number of passengers", fill = "Survived")
+
+# Plotting for siblings or spouses (Kate's case)
+ggplot(assignment_6_dataset, aes(x = SibSp, fill = factor(Survived))) + 
+  geom_bar(stat = "count") +
+  labs(x = "Number of siblings or spouses", y = "Number of passengers", fill = "Survived")
 ```
 
 ## Clean the data
 
 ```{r}
+assignment_6_dataset <- assignment_6_dataset %>%
+  filter(Embarked != "", !is.na(Embarked)) %>%
+  mutate(Age = ifelse(!is.na(Age), round(Age), NA), # We will round the Age variables
+         Cabin = ifelse(Cabin != "", "Cabin", "No cabin"), # This is for better data handling 
+         Embarked = factor(Embarked, levels = c("C", "Q", "S"))) # We will drop the data with those missing values
 
+assignment_6_dataset$Cabin <- factor(assignment_6_dataset$Cabin) # This should be factor variable
+
+# We will check our data cleaning process
+range(assignment_6_dataset$Age, na.rm = TRUE)
+levels(assignment_6_dataset$Embarked)
+sum(is.na(assignment_6_dataset$Cabin) | assignment_6_dataset$Cabin == "")
+sum(assignment_6_dataset$Cabin == "No cabin") # It should be 687
 ```
 
 ## Creating a datatable for Sue, Kate, and Leonardo
 
 ```{r}
+# Create a data table for Sue and Kate without Leonardo
+Sue_Kate_data <- tibble(
+  Passengerid = c(892, 893), # This is imaginary i will probably drop this from the model
+  Survived = c("dead", "survivor"),
+  Pclass = c(3, 3),
+  Name = c("Sue", "Kate"),
+  Sex = c("female","female"),
+  Age = c(20, 4),
+  SibSp = c(0,0),
+  Parch = c (1,1),
+  Ticket = c (001,002), # This is imaginary i will probably drop this from the model
+  Fare = c(8, 8),
+  Cabin = c("no cabin", "no cabin"),
+  Embarked = c("S", "S")
+)
 
+# Create a data table for Sue and Kate with Leonardo
+Sue_Kate_data_without_Leonardo <- tibble(
+  Passengerid = c(892, 893), # This is imaginary i will probably drop this from the model
+  Survived = c("dead", "survivor"),
+  Pclass = c(3, 3),
+  Name = c("Sue", "Kate"),
+  Sex = c("female","female"),
+  Age = c(20, 4),
+  SibSp = c(1,0),
+  Parch = c (1,2),
+  Ticket = c (001,002), # This is imaginary i will probably drop this from the model
+  Fare = c(8, 8),
+  Cabin = c("no cabin", "no cabin"),
+  Embarked = c("S", "S")
+)
 ```
 
 ## Building the null model
 
 ```{r}
+null_model <- glmer(Survived ~ 1 + (1 | Pclass) + (1 | Sex) + (1 | Fare) + (1 | Embarked) , data = assignment_6_dataset, family = binomial) # I removed the same random effects which i took out from the final model through feature engineering 
+
+
 
 ```
 
 ## Building the model
 
 ```{r}
+model <- glmer(Survived ~ SibSp + Parch + (1 | Pclass) + (1 | Sex) + (1 | Fare) + (1 | Embarked) , # I excluded Passengerid and Ticket name. The other variables are added as random effects. Age and Cabin were removed through feature engineering. See bottom of the cell for explanation. 
+               data = assignment_6_dataset,
+               family = binomial())
+
+# Get the predicted probabilities
+predicted_probs <- predict(model, type = "response")
+
+# Convert predicted probabilities to predicted classes (survivor or dead)
+predictions <- ifelse(predicted_probs > 0.5, "survivor", "dead")
+
+# Create a subset of the actual values to match the length of predictions
+actual <- assignment_6_dataset$Survived[1:length(predictions)]
+
+# Create a confusion matrix
+confusion <- table(actual, predictions)
+
+# Print the confusion matrix
+print(confusion)
+
+TP <- confusion[1, 1]  # True Positives
+TN <- confusion[2, 2]  # True Negatives
+FP <- confusion[1, 2]  # False Positives
+FN <- confusion[2, 1]  # False Negatives
+
+accuracy <- (TP + TN) / (TP + TN + FP + FN)
+accuracy_percentage <- accuracy * 100
+paste0(accuracy_percentage, "%")
+
+# I removed age as a random effect in feature engineering and the model's accuracy went up to 86,5% from 54%
+# I also excluded Cabin as a random effect and the accuracy went up to 87,064 %
+# This is higher than 74% so this will be my final prediction model
+
 
 ```
 
 # Check the assumptions
 
 ```{r}
+# Generate residuals using DHARMa for outlier check
+residuals <- simulateResiduals(model)
 
+# Plot the residuals
+plot(residuals) # Although we have significant distributional deviance, the dispersion test is non-significant and the outlier test shows no potential outlier. 
 ```
 
 # Compare the models
 
 ```{r}
+summary(null_model) 
 
+summary(model) 
+
+anova_result <- anova(null_model, model, test = "Chi") 
+
+print(anova_result)
+# The null model has an AIC of 829.68, while the model with fixed effects has an AIC of 831.38. The likelihood ratio test compares these two models and yields a test statistic of 2.2994, with 2 degrees of freedom and a p-value of 0.3167. This suggests that the addition of fixed effects in the model does not significantly improve the fit compared to the null model.
+
+# Calculate McFadden's R-squared
+mcfadden_r2 <- 1 - (logLik(model) / logLik(null_model))
+
+# Print the result
+cat("McFadden's R-squared:", mcfadden_r2, "\n") # McFadden's R-squared 0,002805187
+
+# McFadden's R-squared ranges from 0 to 1, where 0 indicates that the model does not explain any of the variance beyond the null model, and 1 indicates a perfect fit. In this case, the calculated McFadden's R-squared value of 0.002805187 suggests that the model explains a very small amount of the variance beyond the null model. This indicates that the variables SibSp and Parch included in the model may not be strongly associated with the outcome. This could mean strong evidence that the presence of Leonardo did not matter on the ship, because it had not any significance on the death of Sue.
+
+# Calculate accuracy for predicting survivors
+survivor_accuracy <- TP / (TP + FN)
+survivor_accuracy_percentage <- survivor_accuracy * 100
+
+# Calculate accuracy for predicting deaths
+death_accuracy <- TN / (TN + FP)
+death_accuracy_percentage <- death_accuracy * 100
+
+# Print the accuracies
+cat("Overall Accuracy:", accuracy_percentage, "%\n") # 87,064 % overall accuracy
+cat("Accuracy for Predicting Survivors:", survivor_accuracy_percentage, "%\n") # 86,532 % predicting survivors
+cat("Accuracy for Predicting Deaths:", death_accuracy_percentage, "%\n") # 88,136 % predicting deaths
+
+# It seems our model is quite accurate
 ```
 
 # Calculate odds ratio and confidence interval
 
 ```{r}
+# Extract the fixed effects coefficients
+fixed_effects <- fixef(model)
+
+# Create a data frame with the coefficients
+coefficients_table <- data.frame(
+  Predictor = names(fixed_effects),
+  Coefficient = fixed_effects
+)
+
+# Print the coefficients table
+print(coefficients_table)
+
+# For the predictor "SibSp" to calculate the odds ratio, we exponentiate the coefficient:
+
+Coefficient_SibSp <- -0.17522110
+
+Odds_ratio_SibSp <- exp(Coefficient_SibSp)
+
+print(Odds_ratio_SibSp)
+
+# For the predictor "Parch" to calculate the odds ratio, we exponentiate the coefficient:
+
+Coefficient_Parch <- -0.05946269
+
+Odds_ratio_Parch <- exp(Coefficient_Parch)
+
+print(Odds_ratio_Parch)
+
+# For SibSp
+SE_SibSp <- 0.12498
+CI_SibSp <- c(Odds_ratio_SibSp - (1.96 * SE_SibSp), Odds_ratio_SibSp + (1.96 * SE_SibSp))
+
+# For Parch
+SE_Parch <- 0.13844
+CI_Parch <- c(Odds_ratio_Parch - (1.96 * SE_Parch), Odds_ratio_Parch + (1.96 * SE_Parch))
+
+# Display the confidence intervals
+CI_SibSp # 0.5943106 1.0842322
+CI_Parch # 0.6709283 1.2136131
+
+# Extract Chi^2 test statistics and p-values from the anova_result
+chi_squared <- anova_result$Chi
+p_value <- anova_result$Pr
+
+# Calculate AIC for the two models
+aic_model1 <- AIC(null_model)
+aic_model2 <- AIC(model)
+
+# Create a data frame with the coefficients
+final_coefficients_table <- data.frame(
+  Predictor = c("SibSp", "Parch"),
+  Coefficient = c(Coefficient_SibSp, Coefficient_Parch),
+  Odds_ratio = c(Odds_ratio_SibSp, Odds_ratio_Parch),
+  CI_low = c("0.5943106", "0.6709283"),
+  CI_high = c("1.0842322","1.2136131")
+)
+
+# Print the coefficients table
+print(final_coefficients_table)
+
+
+# Create a data frame with chi-squared test statistics, p-values, and AIC values
+results_table <- data.frame(
+  Model = c("Null Model", "Model"),
+  Chi_Squared = c(chi_squared),
+  P_Value = c(p_value),
+  AIC = c(aic_model1, aic_model2)
+)
+
+# Print the results table
+print(results_table)
 
 ```
 
 # Report the results
 
 ```{r}
+# Create a data frame for the fixed effects coefficients
+coefficients_table_fixed <- data.frame(
+  Coefficient = fixed_effects,
+  Type = "Fixed"
+)
 
+print(coefficients_table_fixed)
+
+# The predictors in the model can be ranked based on influence in this order: 1.SibSp has a coefficient of -0.17522110, indicating a negative influence on the outcome. It suggests that an increase in the number of siblings/spouses aboard is associated with a decrease in the log-odds of survival. 2. Parch has a coefficient of -0.05946269, also indicating a negative influence on the outcome. It suggests that an increase in the number of parents/children aboard is associated with a decrease in the log-odds of survival.
+
+# The regression equation for survival: logit(p) = 0.40718 - 0.17522SibSp - 0.05946Parch + u(random effects) 
+
+# Sue and Kate without Leonardo SibSp= 0 Parch= 1
+# logit(p) = 0.40718 - 0.17522 * 0 - 0.05946 * 1 = 0.40718 - 0 - 0.05946 = 0.34772
+# p = exp(0.34772) / (1 + exp(0.34772))  = 0.5862 58,62% probability of survival
+
+
+
+# Sue with Leonardo SibSp= 1 Parch= 1
+# logit(p) = 0.40718 - 0.17522 * 1 - 0.05946 * 1 = 0.40718 - 0.17522 - 0.05946 = 0.17250
+# p = exp(0.1725) / (1 + exp(0.1725)) = 0.5432 54,32 % probability of survival
+
+
+# Kate with Leonardo SibSp= 0 Parch= 2
+# logit(p) = 0.40718 - 0.17522 * 0 - 0.05946 * 2 = 0.40718 - 0 - 0.11892 = 0.28826 
+# p = exp(0.28826) / (1 + exp(0.28826)) = 0.5715 57,15 % probability of survival
+
+# Kate statements are not right, we have evidence, that the presence of Leonardo would have decreased their chances of survival by a small amount.
 ```
 

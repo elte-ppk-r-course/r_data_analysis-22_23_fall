@@ -1,6 +1,6 @@
 ---
 title: 'Assignment 2: Data visualization'
-author: "Tamas Nagy"
+author: "Dávid Winkler"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -20,6 +20,16 @@ You will have to create 3 plots based on the datasets and instructions detailed 
 knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(tidytuesdayR)
+library(ggplot2)
+library(viridis)
+library(forcats)
+library(dplyr)
+library(scales)
+library(tidyr)
+expeditions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-22/expeditions.csv') # We read the data
+phd_field <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
+commute_mode <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-05/commute.csv")
+
 ```
 
 ## Task 1: Climbing expeditions
@@ -31,12 +41,33 @@ The 2020-09-22 TidyTueday datasets are about climbing expeditions. From the thre
 -   The bar colors use the viridis palette and light theme.
 
 ```{r}
+# Filter out the "Other" named peak from the data
+filtered_data <- expeditions %>%
+  filter(peak_name != "Other")
 
+# Use fct_lump() to get the 15 most frequent peaks
+unique_peaks <- filtered_data$peak_name %>%
+  fct_lump(n = 15)
+
+# Reorder the factor levels based on the count of expedition IDs
+filtered_data <- filtered_data %>%
+  mutate(peak_name = fct_reorder(peak_name, expedition_id, .fun = function(x) sum(!is.na(x)))) %>%
+  filter(peak_name %in% unique_peaks)
+
+# Create the bar plot with flipped coordinates
+ggplot(filtered_data, aes(x = peak_name, fill = season)) +
+  geom_bar() +
+  labs(x="", y = "Number of expeditions") + # Setting labels and title
+   ggtitle("The 15 most popular peaks stacked by season of expedition") +
+  scale_fill_viridis(discrete = TRUE) + # Setting color
+  theme_light() + # Setting light theme
+  theme(legend.position = "bottom") + # Move the legends to the bottom of the plot
+  coord_flip() # Rotate the plot 
 ```
 
 ## Task 2: PhDs awarded
 
-The 2019-02-19 TidyTueday dataset is about phd-s awarded by year and field. There is only one dataset, it is called `phd_by_field`. Reproduce the plot below!
+The 2019-02-19 TidyTueday dataset is about phd-s awarded by year and field. There is only one dataset, it is called `phd_by_field`. Reproduce the plot below! 
 
 Notes:
 
@@ -45,6 +76,22 @@ Notes:
 -   The line size is 1.2, the colors are from the brewer "Dark2" palette. The theme is set to minimal.
 
 ```{r}
+# Aggregate the data by broad_field and year
+aggregated_data <- aggregate(n_phds ~ broad_field + year, data = phd_field, FUN = sum)
+
+# Set up the plot
+ggplot(data = aggregated_data, aes(x = year, y = n_phds, group = broad_field, color = broad_field)) +
+geom_line(linewidth = 1.2) +
+scale_color_brewer(palette = "Dark2") + # Setting color
+labs(title = "Number of awarded Ph.D.-s in the US by year", # Setting labels and title
+      x = "",
+      y = "",
+      color = "Broad field") +
+theme_minimal() + # Setting theme minimal
+scale_x_continuous(breaks = pretty_breaks()) + # Setting pretty brakes
+scale_y_continuous(labels = comma_format()) # Setting comma format
+
+
 
 ```
 
@@ -59,5 +106,28 @@ Notes:
 -   The point size is 2, . The theme is set to light.
 
 ```{r}
+# Filter out rows with missing state_region values
+filtered_data2 <- commute_mode %>%
+  filter(mode %in% c("Walk", "Bike"))
+
+# Aggregate the data by state
+aggregated_data2 <- filtered_data2 %>%
+  group_by(state) %>%
+  summarize(Walk = sum(n[mode == "Walk"]),
+            Bike = sum(n[mode == "Bike"]),
+            state_region = first(state_region),
+            state_abb = first(state_abb))
+
+# Set up the plot
+ggplot(data = aggregated_data2, aes(x = Walk, y = Bike, color = state_region, label = state_abb)) +
+  geom_point(size = 2) +
+  geom_text(color = "Black", check_overlap = TRUE) + # Disable overleaping of state_abbs (monitor size matters)
+  labs(title = "Title number of people walking vs. biking to work in each USA state", # Setting title and labels
+       x = "Number of ppl walking to work (log N)",
+       y = "Number of ppl biking to work (log N)",
+       color = "State region") + 
+  scale_x_log10(labels = comma_format()) + # Log transformations and coma formats
+  scale_y_log10(labels = comma_format()) +
+  theme_light() # Setting theme light
 
 ```
