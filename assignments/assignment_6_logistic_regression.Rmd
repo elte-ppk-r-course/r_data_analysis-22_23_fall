@@ -187,7 +187,7 @@ null_model <- glmer(Survived ~ 1 + (1 | Pclass) + (1 | Sex) + (1 | Fare) + (1 | 
 ## Building the model
 
 ```{r}
-model <- glmer(Survived ~ SibSp + Parch + (1 | Pclass) + (1 | Sex) + (1 | Fare) + (1 | Embarked) , # I excluded Passengerid and Ticket name. The other variables are added as random effects. Age and Cabin were removed because of feature engineering. See bottom of the cell for explanation. 
+model <- glmer(Survived ~ SibSp + Parch + (1 | Pclass) + (1 | Sex) + (1 | Fare) + (1 | Embarked) , # I excluded Passengerid and Ticket name. The other variables are added as random effects. Age and Cabin were removed through feature engineering. See bottom of the cell for explanation. 
                data = assignment_6_dataset,
                family = binomial())
 
