@@ -93,8 +93,7 @@ range(assignment_3_dataset$household_income)
 ggplot(assignment_3_dataset, aes(x = age, y = pain, color = sex)) +
   geom_jitter() +  # Replace geom_point() with geom_jitter() to show every patient on the plot with random noise
   labs(x = "Age", y = "Pain", color = "Sex") +
-  ggtitle("Scatter Plot: Age vs. Pain with Sex")
-
+  ggtitle("Scatter Plot: Age vs. Pain with Sex") 
 ```
 
 #### Correct coding errors
@@ -113,11 +112,9 @@ range(assignment_3_dataset$mindfulness) # Checking if we were successful
 
 # Making the corrected scatter plot for our exploratory data analysis
 ggplot(assignment_3_dataset, aes(x = age, y = pain, color = sex)) +
-  geom_count(alpha=0.5) + # Adjust transparency, to see overlapping points
+  geom_jitter() +  # Replace geom_point() with geom_jitter() to show every patient on the plot with random noise
   labs(x = "Age", y = "Pain", color = "Sex") +
-  ggtitle("Data cleaned Scatter Plot: Age vs. Pain with Sex") +
-  scale_y_continuous(breaks = seq(0, 10), limits = c(0, 10)) + # Adjust y scale to see our full pain measurement scale
-  xlim(0, 100) # Adjust x scale to better understand the age of our control group
+  ggtitle("Scatter Plot: Age vs. Pain with Sex")
   
 ```
 
@@ -231,6 +228,9 @@ Create the simple model and get the results of the model that needs to be report
 simple_model <- lm(pain ~ age + sex, data = assignment_3_dataset)
 
 glance(simple_model) # Adjusted R squaired = 0.0685 AIC = 572
+summary(simple_model)
+
+# Pain = 8.30568 - 0.08448 * age + 0.13129 * sexmale ( "sexmale" is a binary variable representing the sex (1 for male, 0 for female))
 ```
 
 Create the more complex model based on the results of the model diagnostics. Also, get the results that needs to be reported based on the What to report section.
@@ -239,6 +239,9 @@ Create the more complex model based on the results of the model diagnostics. Als
 #𝑌 = 𝑏0 + 𝑏1 * age + 𝑏2 * sex + 𝑏3 * STAI_trait + 𝑏4 * pain_cat + 𝑏5 * mindfulness + 𝑏6 * cortisol_serum
 
 glance(updated_complex_model) # Adjusted R squaired = 0.312 AIC = 529
+summary(updated_complex_model)
+
+# Pain = 1.94499 - 0.03400 * age + 0.31570 * sexmale - 0.01324 * STAI_trait + 0.08338 * pain_cat - 0.13623 * mindfulness + 0.54341 * cortisol_serum
 ```
 
 Compare the two models.
