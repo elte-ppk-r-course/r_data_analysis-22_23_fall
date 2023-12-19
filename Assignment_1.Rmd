@@ -1,0 +1,387 @@
+---
+title: "Assignment 1: The cocktail bar"
+author: "Anna Oszvald"
+date: "2023.12.12."
+output: html_document
+---
+
+
+## 1. Read the data
+
+```{r}
+# 1. Read the data
+cocktail_data <- readr::read_tsv('https://raw.githubusercontent.com/nthun/cocktail-balance/master/cocktail_data.tsv')
+```
+
+## 2. Transform the data table and clean the ingredient variable!
+
+
+```{r}
+#Overview
+print(summary(cocktail_data))
+
+
+cat("Column Headers:\n")
+print(names(cocktail_data))
+
+
+cat("\nFirst 2 Rows of the Data:\n")
+print(head(cocktail_data, 2))
+
+
+# Load packages
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  # If not, install tidyverse
+  install.packages("tidyverse", repos = "http://cran.rstudio.com/")
+}
+
+library(tidyverse)
+
+# Put ingredients in separate rows.
+cocktail_data <- cocktail_data %>%
+  separate_rows(ingredients, sep = "<br>") %>%
+  mutate(ingredients = str_trim(ingredients))
+
+# Clean of all quantities (e.g., 1/2 oz, 2 dashes, etc.) from ingredients
+cocktail_data <- cocktail_data %>%
+  mutate(ingredients = str_replace_all(ingredients, "\\d+/?\\d*\\s*(oz|dashes|tsp|tbsp|bsp|dash|drops|drop)?", "")) %>%
+  mutate(ingredients = str_trim(ingredients))
+
+# Clean the indicator of alcohol content (e.g., 47.3% abv) from ingredients
+cocktail_data <- cocktail_data %>%
+  mutate(ingredients = str_replace_all(ingredients, "\\d+\\.?\\d*% abv", "")) %>%
+  mutate(ingredients = str_replace_all(ingredients, "<br/>", ", ")) %>%
+  mutate(ingredients = str_replace_all(ingredients, "\\(%", "")) %>%
+  mutate(ingredients = str_replace_all(ingredients, "abv\\)", "")) %>%
+  mutate(ingredients = str_replace_all(ingredients, "\\(.%", "")) %>%
+  mutate(ingredients = str_replace_all(ingredients, "<B>", "B>,")) %>%
+  mutate(ingredients = str_replace_all(ingredients, "^\\.", "")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("cr\u008fme"), "creme")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("simple"), "simple syrup")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("Marschino"), "maraschino")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("crem de violette"), "creme de violette")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("sugard"), "sugared")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("syrup syrup"), "syrup")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("syrup syrup"), "syrup")) %>%
+mutate(ingredients = str_replace_all(ingredients, fixed("cherry herring "), "herring cherry liqueur")) %>%
+  mutate(ingredients = str_trim(ingredients))
+
+# Separate "Luxardo Marschino<B> Plymouth Gin"
+cocktail_data <- cocktail_data %>%
+  mutate(ingredients = str_replace_all(ingredients, "<b> ", ",")) %>%
+  separate_rows(ingredients, sep = ",")
+
+# Remove extra spaces, ". ", and make all letters lowercase
+cocktail_data <- cocktail_data %>%
+  mutate(ingredients = str_trim(ingredients)) %>%
+  mutate(ingredients = str_replace_all(ingredients, "\\s*\\.\\s*", "")) %>%
+  mutate(ingredients = stringr::str_to_lower(ingredients))
+
+
+# Get unique ingredients
+unique_ingredients <- cocktail_data %>%
+  distinct(ingredients) %>%
+  arrange(ingredients) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("cherry herring"), "herring cherry liqueur")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("lairds applejack bottled in bond"), "applejack apple brandy"))
+
+# Remove the specified ingredients
+unique_ingredients <- unique_ingredients[!grepl("bitters", unique_ingredients$ingredients), ]
+unique_ingredients <- unique_ingredients[!grepl("lime juice or champagne acid", unique_ingredients$ingredients), ]
+
+# Display unique ingredients
+print("\nUnique Ingredients:")
+print(unique_ingredients)
+
+# Get unique ingredients
+unique_ingredients <- cocktail_data %>%
+  distinct(ingredients) %>%
+  arrange(ingredients) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("cherry herring"), "herring cherry liqueur")) %>%
+  mutate(ingredients = str_replace_all(ingredients, fixed("lairds applejack bottled in bond"), "applejack apple brandy"))
+
+# Remove the specified ingredients
+unique_ingredients <- unique_ingredients[!grepl("bitters", unique_ingredients$ingredients), ]
+unique_ingredients <- unique_ingredients[!grepl("lime juice or champagne acid", unique_ingredients$ingredients), ]
+
+# Display unique ingredients
+print("\nUnique Ingredients:")
+print(unique_ingredients)
+
+
+```
+
+## 3. All ingredients in alphabetical order
+
+```{r}
+## 3. All ingredients in alphabetical order
+
+cat("\nUnique Ingredients:\n")
+print(unique_ingredients)
+
+
+```
+
+## 4. Number of unique ingredients
+
+```{r}
+# Display unique ingredients
+cat("\nUnique Ingredients:\n")
+print(unique_ingredients, n = Inf)
+
+#You would need 59 unique ingredients, if you consider different branded and differently processed products as unique ingredient.
+```
+
+```{r}
+# Example data frame with ingredients
+ingredients <- c("absinthe", "absolut citron vodka", "agar-clarified grapefruit juice",
+                 "amer picon", "angostura bitters", "apple brandy", "benedictine",
+                 "blanco tequila", "bourbon", "campari", "centrifuge-clarified grapefruit juice",
+                 "champagne acid", "herring cherry liqueur", "clarified lime juice",
+                 "clarified lime juice or champagne acid", "cognac", "cointreau",
+                 "cranberry juice", "creme de violette", "curacao", "demerara syrup",
+                 "dolin dry vermouth", "drambuie", "dry vermouth", "egg white",
+                 "fernet branca", "gin", "grapefruit juice", "green chartreuse",
+                 "grenadine", "heavy cream", "hellfire bitters", "honey syrup",
+                 "lairds applejack bottled in bond", "lemon juice", "lillet blanc",
+                 "lime juice", "luxardo maraschino", "old tom gin", "orange bitters",
+                 "orange juice", "peychaud's bitters", "pisco", "plymouth gin",
+                 "quinine simple syrup", "raspberry syrup", "rye", "saline", "saline solution",
+                 "scotch", "simple syrup", "sloe gin", "sugared -proof rum",
+                 "sugared -proof rye", "sweet vermouth", "water", "white creme de cacao",
+                 "white mezcal", "white rum", "yellow chartreuse")
+
+# Convert the ingredients to a data frame
+df <- data.frame(ingredients)
+
+# Define a vector of brand names and processing methods to remove
+to_remove <- c("absolut", "centrifuge", "bottled in bond", "agar-", "proof", "lairds", "mechanical separation", "aerated", "- ", '"lime juice or champagne acid"', "old tom ", "dolin", "sugared - ", "sugared -", "peychaud's ", "plymouth " , "luxardo " ,"clarified" , "- ", "sugared" , "hellfire", "blanco" , "herring ")
+
+# Remove brands and processing methods from ingredients
+cleaned_ingredients <- df$ingredients
+
+for (pattern in to_remove) {
+  cleaned_ingredients <- gsub(pattern, "", cleaned_ingredients)
+}
+
+# Trim whitespaces
+cleaned_ingredients <- trimws(cleaned_ingredients)
+
+# Remove empty strings
+cleaned_ingredients <- cleaned_ingredients[cleaned_ingredients != ""]
+
+# Remove the specified ingredient "bitters"
+cleaned_ingredients <- cleaned_ingredients[!grepl("bitters", cleaned_ingredients)]
+# Remove the specified ingredient "lime juice or champagne acid"
+cleaned_ingredients <- cleaned_ingredients[!grepl("lime juice or champagne acid", cleaned_ingredients)]
+
+# Get unique ingredients
+unique_ingredients <- unique(cleaned_ingredients)
+
+# Display unique ingredients
+print("\nUnique Ingredients:")
+print(unique_ingredients)
+
+#If the brands wouldn't matter nor processes 46 ingredients would be enough. But as it can't be consulted on with the cocktail bar owner I am keeping those in the later data processing.
+
+
+```
+
+## 5. What are the top 10 ingredients?
+
+```{r}
+#5. TOP10 ingredient by count of usage
+# Set the width for the console output
+options(width = 120)
+
+# Count the frequency of each ingredient
+ingredient_counts <- cocktail_data %>%
+  count(ingredients, sort = TRUE)
+
+# Create ranks for each ingredient
+ingredient_counts <- ingredient_counts %>%
+  mutate(rank = dense_rank(desc(n)))
+
+# Display the top 10 ingredients
+top_10_ingredients <- ingredient_counts %>%
+  filter(rank <= 10)
+
+print("\nTop 10 Ingredients:")
+print(top_10_ingredients)
+
+# Display all ingredients with ranks
+all_ingredients <- ingredient_counts
+
+print("\nAll Ingredients:")
+print(all_ingredients, n = 25)
+
+
+
+
+```
+
+## 6. Which cocktail(s) has/have the most ingredients?
+
+```{r}
+# Count the number of ingredients in each cocktail
+cocktail_ingredient_counts <- cocktail_data %>%
+  group_by(name) %>%
+  summarise(ingredient_count = n_distinct(ingredients))
+
+# Find the maximum number of ingredients
+max_ingredient_count <- max(cocktail_ingredient_counts$ingredient_count)
+
+# Filter cocktails with the maximum number of ingredients
+cocktails_with_most_ingredients <- cocktail_ingredient_counts %>%
+  filter(ingredient_count == max_ingredient_count) %>%
+  left_join(cocktail_data, by = "name") %>%
+  select(name, ingredients)
+
+# Display cocktails with the most ingredients
+cat("\nCocktail(s) with the Most Ingredients:\n")
+
+if (nrow(cocktails_with_most_ingredients) == 0) {
+  cat("No cocktails found.\n")
+} else {
+  print(cocktails_with_most_ingredients, n=60)
+}
+
+```
+
+## 7. How many ingredients appear in only one cocktail (rare ingredient)?
+
+```{r}
+
+# Exclude specific cocktail and ingredient
+excluded_cocktail <- "Carbonated Negroni"
+excluded_ingredient <- "clarified lime juice or champagne acid"
+
+# Count the number of cocktails each ingredient appears in
+ingredient_counts <- cocktail_data %>%
+  group_by(ingredients) %>%
+  summarise(cocktail_count = n_distinct(name))
+
+# Filter for ingredients that appear in only one cocktail
+unique_ingredients <- ingredient_counts %>%
+  filter(cocktail_count == 1) %>%
+  left_join(cocktail_data, by = "ingredients") %>%
+  group_by(name) %>%
+  filter(n() > 0) %>%
+  select(name, ingredients)
+
+# Exclude specific cocktail and ingredient
+unique_ingredients <- unique_ingredients %>%
+  filter(!(name == excluded_cocktail & ingredients == excluded_ingredient))
+
+# Replace specific ingredient name
+replacement_ingredient <- "cherry herring"
+new_ingredient <- "cherry liqueur"
+
+unique_ingredients <- unique_ingredients %>%
+  mutate(ingredients = ifelse(ingredients == replacement_ingredient, new_ingredient, ingredients))
+
+# Display cocktails with at least one unique ingredient
+cat("\nCocktails with At Least One Unique Ingredient (cherry herring replaced with cherry liqueur):\n")
+
+if (nrow(unique_ingredients) == 0) {
+  cat("No cocktails with at least one unique ingredient found.\n")
+} else {
+
+  print(unique_ingredients, n=26)
+}
+
+#25 Coctails contain a unique ingredient.
+```
+
+
+## 8. Which cocktail has an ingredient that is only used in one cocktail?
+
+```{r}
+
+
+cocktail_counts <- cocktail_data %>%
+  group_by(name) %>%
+  summarise(ingredient_count = n_distinct(ingredients))
+
+# Filter cocktails with only one ingredient
+rare_cocktails <- cocktail_counts %>%
+  filter(ingredient_count == 1)
+
+# Display rare cocktails and their ingredients
+cat("\nRare Cocktails:\n")
+
+if (nrow(rare_cocktails) == 0) {
+  cat("No cocktails with only one ingredient found.\n")
+} else {
+  print(rare_cocktails)
+  
+  # Get the rare ingredients and their corresponding cocktails
+  rare_ingredients <- rare_cocktails %>%
+    left_join(cocktail_data, by = "name") %>%
+    select(name, ingredients) %>%
+    distinct()
+
+  # Display rare ingredients and their corresponding cocktails
+  cat("\nRare Ingredients and Cocktails:\n")
+  print(rare_ingredients)
+}
+```
+
+
+## 9. What are the cocktails without rare ingredients?
+
+```{r}
+
+# Find all unique cocktails
+all_cocktails <- cocktail_data %>%
+  distinct(name, .keep_all = TRUE) %>%
+  select(name)
+
+# Find cocktails without rare ingredients
+cocktails_without_rare_ingredients <- anti_join(all_cocktails, unique_ingredients, by = "name")
+
+# Display cocktails without rare ingredients
+cat("\nCocktails Without Rare Ingredients:\n")
+
+if (nrow(cocktails_without_rare_ingredients) == 0) {
+  cat("No cocktails without rare ingredients found.\n")
+} else {
+  print(cocktails_without_rare_ingredients, n = 50)
+}
+
+
+```
+
+
+## 10. Create a cheat sheet for the bartender!
+```{r}
+# Define corrections
+corrections <- c("Manhatan (Boubon, 45% abv)" = "Manhattan (Bourbon, 45% abv)",
+                  "Manhatan (Rye, 50% abv)" = "Manhattan (Rye, 50% abv)",
+                  "Chartruth" = "Chartreuse")
+
+# Apply corrections to the names
+cocktail_data <- cocktail_data %>%
+  mutate(name = ifelse(name %in% names(corrections), corrections[name], name))
+
+# Sort the names alphabetically
+sorted_cocktail_data <- cocktail_data %>%
+  arrange(name)
+
+# Create a matrix that shows all cocktail names as rows and all ingredients as columns
+cheat_sheet <- sorted_cocktail_data %>%
+  distinct(name, ingredients) %>%
+  group_by(name) %>%
+  mutate(value = "X") %>%
+  pivot_wider(names_from = ingredients, values_from = value, values_fill = "")
+
+# Export the cheat sheet to a CSV file
+write.csv(cheat_sheet, file = "cheat_sheet.csv", row.names = FALSE)
+
+# Display the first 3 sorted and corrected cocktails in a tabular format
+cat("First 3 Sorted and Corrected Cocktails:\n")
+print(head(cheat_sheet, 3))
+
+
+```
+

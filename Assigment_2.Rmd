@@ -1,0 +1,111 @@
+---
+title: "Assignment 2: Data Visualization"
+author: "Anna Oszvald"
+date: "2023.12.13."
+output: html_document
+---
+
+```{r}
+# Set CRAN mirror
+options(repos = c(CRAN = "https://cran.rstudio.com"))
+
+# Install and load packages if not already installed
+required_packages <- c("dplyr", "tidyr", "forcats", "ggplot2", "scales")
+
+for (pkg in required_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+# Load the required libraries
+library(dplyr)
+library(tidyr)
+library(forcats)
+library(ggplot2)
+library(scales)
+library(viridis)
+
+
+
+
+
+```
+
+## Task 1: Climbing expeditions
+
+
+```{r}
+# Load data
+expeditions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-22/expeditions.csv')
+
+# Data transformation
+data <- expeditions %>% 
+  mutate(top_peaks = fct_lump(peak_name, n = 15)) %>%
+  filter(top_peaks != "Other")
+
+# Plotting data
+data %>%
+  count(peak_name, season, sort = TRUE) %>% 
+  mutate(peak_name = fct_reorder(peak_name, n, sum)) %>% 
+  ggplot() +
+  aes(y = peak_name, x = n, fill = season) +
+  geom_col() +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "darkblue")) +
+  labs(title = "The 15 most popular peaks stacked by season of expedition", y = NULL, x = "Number of expeditions")
+
+```
+
+##Task 2: PhDs awarded
+
+```{r}
+#Load data
+phd_field <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
+
+
+# Data handling
+  phd_field %>% 
+  group_by(broad_field, year) %>%
+  summarise(phd_number = sum(n_phds, na.rm = TRUE)) %>% 
+  ggplot()+
+  aes(x = year, y = phd_number, color = broad_field )+
+  geom_line(size = 1.2)+
+  scale_color_brewer(palette  = "Dark2")+
+  scale_y_continuous(labels = comma_format())+
+  scale_x_continuous(breaks = breaks_pretty(n = 5))+
+  theme_minimal()+
+   labs(title = "Number of awarded PhDs in the USA by year", y = NULL, x = NULL, color = "Broad field" )
+  
+
+```
+
+
+
+## Task 3: Commute in the US
+
+```{r}
+# Load data
+commute_mode <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-05/commute.csv")
+df_commute <- commute_mode %>% 
+  group_by(state, state_region, mode, state_abb) %>% 
+  summarise(number_ppl = sum(n, na.rm = TRUE)) %>% 
+  pivot_wider(names_from = mode, values_from = number_ppl)
+
+# Data handling
+df_commute %>% 
+  ggplot() +
+  aes(x = Walk, y = Bike, color = state_region) +
+  geom_point(size = 2) +
+  geom_text(aes(label = state_abb), color = "Black") +
+  scale_x_log10(labels = comma_format()) +
+  scale_y_log10(labels = comma_format()) +
+  theme_minimal() +
+  theme(legend.position = "bottom", plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "darkgreen")) +
+  labs(title = "Number of people walking vs. biking to work in each USA state", y = "Number of ppl biking to work (log N)", x = "Number of ppl walking to work (log N)", color = "State region")
+
+  
+```
+  

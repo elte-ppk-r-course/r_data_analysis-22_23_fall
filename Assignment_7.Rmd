@@ -1,0 +1,86 @@
+---
+title: "Assignment 7. Lightning Animation"
+author: "Anna Oszvald"
+output: html_document
+---
+
+```{r}
+
+library(gganimate)
+library(ggplot2)
+library(gifski)
+```
+
+
+```{r}
+
+# Canvas dimensions
+canvas_width <- 480
+canvas_height <- 480
+
+# Lightning generation function
+generate_lightning <- function(current_step, last_position, can_branch) {
+  if (current_step == canvas_height) {
+    return(data.frame(x = c(), y = c()))
+  } else {
+    new_position <- last_position + get_lightning_direction()
+    if (new_position < 0) {
+      new_position <- 0
+    }
+    if (new_position > canvas_width) {
+      new_position <- canvas_width
+    }
+    new_node <- data.frame(x = c(current_step), y = c(new_position))
+
+    if (can_branch) {
+      will_branch <- runif(1) <= 0.01
+      if (will_branch) {
+        return(do.call("rbind", list(new_node, generate_lightning(current_step + 1, new_position, TRUE), generate_lightning(current_step + 1, new_position, FALSE))))
+      }
+    }
+    return(rbind(new_node, generate_lightning(current_step + 1, new_position, can_branch)))
+  }
+}
+
+# Function to get lightning direction
+get_lightning_direction <- function() {
+  change <- 1
+  rand <- runif(1, min = 0, max = 101)
+  if (rand < 33) {
+    return(-change)
+  } else if (rand < 66) {
+    return(0)
+  } else {
+    return(change)
+  }
+}
+
+# Generate lightning data
+lightning_data <- generate_lightning(0, canvas_width / 2, TRUE)
+
+# Plotting
+lightning_plot <- ggplot(data = lightning_data, aes(x = x, y = y)) +
+  geom_point(size = 1, color = 'powderblue') +
+  coord_flip(ylim = c(0, canvas_height), xlim = rev(c(0, canvas_width))) +
+  scale_x_reverse() +
+  theme(
+    panel.background = element_rect(fill = 'black'),
+    legend.position = "none",
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  ) +
+  transition_time(x) +
+  shadow_mark()
+
+# Create and save animation
+animate(lightning_plot, nframes = canvas_height, duration = 8, renderer = gifski_renderer("lightning.gif"))
+
+
+
+```
+
+```{r}
+
+```

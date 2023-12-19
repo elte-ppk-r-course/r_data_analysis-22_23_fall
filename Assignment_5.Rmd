@@ -1,0 +1,113 @@
+---
+title: "Assignment 5. Mixed Models Analysis"
+author: Oszvald Anna
+date: "2023.12.13."
+output: html_document
+---
+
+```{r}
+
+# Set CRAN mirror
+options(repos = c(CRAN = "https://cran.rstudio.com"))
+# Install and Load Libraries
+required_packages <- c("tidyverse", "lme4", "haven", "broomExtra", "ggplot2")
+
+for (pkg in required_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+  }
+  library(pkg, character.only = TRUE)
+}
+
+
+
+# Load additional libraries
+library(tidyverse)
+library(lme4)
+library(haven)
+library(broomExtra)
+library(ggplot2)
+
+
+# Read datasets
+dataset_A <- haven::read_sav("https://github.com/elte-ppk-r-course/r_data_analysis-22_23_fall/raw/main/data/assignment_4_dataset_A.sav")
+dataset_B <- haven::read_sav("https://github.com/elte-ppk-r-course/r_data_analysis-22_23_fall/raw/main/data/assignment_4_dataset_B.sav")
+
+# View the first few rows of dataset_A
+head(dataset_A)
+
+# View the first few rows of dataset_B
+head(dataset_B)
+
+# Exploratory Data Analysis (EDA) for dataset_A
+summary(dataset_A)
+dataset_A %>%
+  count(sex)
+
+# Scatter plot for 'age' vs. 'pain' colored by 'sex' and faceted by 'hospital'
+dataset_A %>%
+  ggplot(aes(age, pain, color = sex)) +
+  geom_point() +
+  facet_wrap(~hospital)
+
+# Correct coding errors and filter 'household_income' greater than or equal to 0
+dataset_A <- dataset_A %>%
+  mutate(
+    sex = fct_collapse(as.factor(sex), male = c("male", "Male"))
+  ) %>%
+  filter(household_income >= 0)
+
+# Additional EDA for cleaned dataset_A
+glimpse(dataset_A)
+dataset_A
+
+# Exploratory Data Analysis (EDA) for dataset_B
+summary(dataset_B)
+dataset_B %>%
+  count(sex)
+
+# Scatter plot for 'age' vs. 'pain' colored by 'sex' and faceted by 'hospital'
+dataset_B %>%
+  ggplot(aes(age, pain, color = sex)) +
+  geom_point() +
+  facet_wrap(~hospital)
+
+# Additional Data Cleaning for dataset_B
+dataset_B <- dataset_B %>% filter(household_income >= 0)
+
+# Additional EDA for cleaned dataset_B
+glimpse(dataset_B)
+dataset_B
+
+# Model Building with mindfulness as a Random Effect
+model <- lmer(
+  pain ~ sex + age + STAI_trait + pain_cat + cortisol_serum + (1 | hospital) + (1 | mindfulness),
+  data = dataset_A
+)
+model
+
+# Check model assumptions
+broomExtra::tidy(model)
+broomExtra::glance(model)
+
+
+# Evaluate Model Performance on Dataset B
+predicted_pain <- predict(model, dataset_B, re.form = NA)
+true_pain <- dataset_B %>% pull(pain)
+TSS <- var(true_pain) * 200
+RSS <- sum((true_pain - predicted_pain)^2)
+R2 <- 1 - (RSS / TSS)
+R2
+
+# Build a lmer with Hospital as a random effect
+hospital_model <- lmer(pain ~ sex + age + STAI_trait + pain_cat + cortisol_serum + (1 | hospital),
+                       data = dataset_A)
+
+# Plot the predicted values from the model on top of the scatter plot
+dataset_A$predicted_pain_hospital <- predict(hospital_model, dataset_A, re.form = NA)
+ggplot(dataset_A, aes(x = age, y = pain, color = sex)) +
+  geom_point() +
+  geom_point(aes(y = predicted_pain_hospital), color = 'blue', alpha = 0.5) +
+  facet_wrap(~hospital) +
+  theme_minimal()
+```
